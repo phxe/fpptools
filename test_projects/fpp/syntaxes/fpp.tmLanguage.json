@@ -6,9 +6,6 @@
 			"include": "#comments"
 		},
 		{
-			"include": "#keywords"
-		},
-		{
 			"include": "#strings"
 		},
 		{
@@ -31,13 +28,7 @@
 					"end": "\\n",
 					"name": "comment.line.at-sign.fpp"
 				}	
-		]
-		},
-		"keywords": {
-			"patterns": [{
-				"name": "keyword.control.fpp",
-				"match": "\\b(hello|world|HelloWorld)\\b"
-			}]
+			]
 		},
 		"strings": {
 			"name": "string.quoted.double.fpp",
@@ -51,10 +42,120 @@
 			]
 		},
 		"reserved-words": {
-			"patterns": [{
-					"name": "variable.language.fpp",
-					"match": "\\b(F32|F64|I16|I32|I64|I8|U16|U32|U64|U8|active|activity|always|array|assert|async|at|base|block|bool|change|command|component|connections|constant|cpu|default|diagnostic|drop|enum|event|false|fatal|format|get|guarded|health|high|id|import|include|input|instance|internal|locate|low|match|module|on|opcode|orange|output|param|passive|phase|port|priority|private|queue|queued|recv|red|ref|reg|resp|save|serial|set|severity|size|stack|string|struct|sync|telemetry|text|throttle|time|topology|true|type|update|warning|with|yellow)\\b"
-				}]
+			"patterns": [
+				{
+					"name": "constant.language.boolean.fpp",
+					"match": "\\b(true|false)\\b"
+				},
+				{
+					"name": "storage.type.identifiers.fpp",
+					"match": "\\b(string|bool)\\b"
+				},
+				{
+					"name": "storage.type.integer.unsigned.fpp",
+					"match": "\\b(U16|U32|U64|U8)\\b"
+				},
+				{
+					"name": "storage.type.integer.signed.fpp",
+					"match": "\\b(I16|I32|I64|I8)\\b"
+				},
+				{
+					"name": "storage.type.floatingPoint.fpp",
+					"match": "\\b(F32|F64)\\b"
+				},
+				{
+					"name": "storage.type.abstract.single.standard.fpp",
+					"match": "\\b(type|instance)\\b"
+				},
+				{
+					"name": "storage.type.abstract.single.special.fpp",
+					"match": "\\b(id|opcode|port|command|phase)\\b"
+				},
+				{
+					"name": "storage.type.abstract.muliple.fpp",
+					"match": "\\b(array|queue|stack)\\b"
+				},
+				{
+					"name": "storage.type.abstract.declarative.standard.fpp",
+					"match": "\\b(enum|struct)\\b"
+				},
+				{
+					"name": "storage.type.abstract.declarative.special.fpp",
+					"match": "\\b(topology|param|module|component|connections)\\b"
+				},
+				{
+					"name": "keyword.telemetry-channel.limit.fpp",
+					"match": "\\b(orange|yellow|red)\\b"
+				},
+				{
+					"name": "keyword.statement.expression.fpp",
+					"match": "\\b(match|throttle|cpu)\\b"
+				},
+				{
+					"name": "keyword.statement.argument.fpp",
+					"match": "\\b(severity|format)\\b"
+				},
+				{
+					"name": "keyword.event.severity.specifier.fpp",
+					"match": "\\b(activity|warning|diagnostic|fatal)\\b"
+				},
+				{
+					"name": "keyword.port.instance.type",
+					"match": "\\b(serial)\\b"
+				},
+				{
+					"name": "keyword.port.general",
+					"match": "\\b(async|guarded|sync)\\b"
+				},
+				{
+					"name": "keyword.port.special",
+					"match": "\\b(command|event|param|telemetry|text|time)\\b"
+				},
+				{
+					"name": "keyword.queue.behavior",
+					"match": "\\b(assert|block|drop)\\b"
+				},
+				{
+					"name": "keyword.connectors.access.fpp",
+					"match": "\\b(at|get|set|save)\\b"
+				},
+				{
+					"name": "keyword.connectors.event.fpp",
+					"match": "\\b(update|always|change)\\b"
+				},
+				{
+					"name": "keyword.connectors.other.fpp",
+					"match": "\\b(on|with|size)\\b"
+				},
+				{
+					"name": "keyword.external.fpp",
+					"match": "\\b(import|include)\\b"
+				},
+				{
+					"name": "keyword.adjectives.after.severity.fpp",
+					"match": "\\b(high|low)\\b"
+				},
+				{
+					"name": "keyword.adjectives.after.port.general.fpp",
+					"match": "\\b(input|output)\\b"
+				},
+				{
+					"name": "keyword.adjectives.after.port.special.fpp",
+					"match": "\\b(recv|reg|resp)\\b"
+				},
+				{
+					"name": "keyword.adjectives.before.instance.fpp",
+					"match": "\\b(base|internal|priority|ref|default|locate)\\b"
+				},
+				{
+					"name": "keyword.adjectives.before.storage.fpp",
+					"match": "\\b(constant|private)\\b"
+				},
+				{
+					"name": "keyword.adjectives.component.fpp",
+					"match": "\\b(health|active|passive|queued)\\b"
+				}
+			]
 		},
 		"operators": {
 			"patterns": [
@@ -70,7 +171,7 @@
 					"name": "keyword.operator.logical.fpp",
 					"match": "&&|\\||!"
 				}
-		]
+			]
 		}
 
 	},
