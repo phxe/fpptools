@@ -3,6 +3,9 @@
 	"name": "FPP",
 	"patterns": [
 		{
+			"include": "#comments"
+		},
+		{
 			"include": "#keywords"
 		},
 		{
@@ -10,6 +13,20 @@
 		}
 	],
 	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"begin": "\\#",
+					"end": "\\n",
+					"name": "comment.line.number-sign.fpp"
+				},
+				{
+					"begin": "\\@",
+					"end": "\\n",
+					"name": "comment.line.at-sign.fpp"
+				}	
+		]
+		},
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.fpp",
