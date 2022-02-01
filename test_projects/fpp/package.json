@@ -1,0 +1,25 @@
+{
+    "name": "fpp",
+    "displayName": "FPP",
+    "description": "F Prime Prime Language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.63.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "fpp",
+            "aliases": ["FPP", "fpp"],
+            "extensions": [".fpp"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "fpp",
+            "scopeName": "source.fpp",
+            "path": "./syntaxes/fpp.tmLanguage.json"
+        }]
+    }
+}

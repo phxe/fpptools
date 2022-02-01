@@ -1,0 +1,32 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "FPP",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.fpp",
+				"match": "\\b(hello|world|HelloWorld)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.fpp",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.fpp",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.fpp"
+}
