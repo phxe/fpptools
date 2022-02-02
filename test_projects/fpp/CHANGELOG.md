@@ -14,6 +14,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.0.2] - 2022-02-01
 ### Added
+- syntax highlighting for arithmetic and logical operators
+
+## [0.0.3] - 2022-02-01
+### Added
 - syntax triple quoted strings
 - fixed double quoted strings to be a single line
 - syntax highlighting for all integer and floating point numbers
