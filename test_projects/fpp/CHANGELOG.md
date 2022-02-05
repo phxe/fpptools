@@ -23,3 +23,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - syntax highlighting for all integer and floating point numbers
 - ignores all declassifies that are followed by `$`
 
+## [0.0.4] - 2022-02-04
+### Added
+- added variable syntax highlighting
+- removed unneeded highlighting
+- Fixed conflict with integer and floating point highlighting

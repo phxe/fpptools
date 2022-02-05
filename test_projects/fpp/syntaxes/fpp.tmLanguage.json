@@ -7,7 +7,8 @@
 		{"include": "#doubleStrings"},
 		{"include": "#numbers"},
 		{"include": "#operators"},
-		{"include": "#reserved-words"}
+		{"include": "#reserved-words"},
+		{"include": "#identifiers"}
 	],
 	"repository": {
 		"comments": {
@@ -33,10 +34,9 @@
 		},
 		"doubleStrings": {
 			"name": "string.quoted.double.fpp",
-			"begin": "\"",
-			"while": "^\n",
+			"begin": "\"[^\n]*",
 			"end": "\"",
-			"contentName": "string.quoted.double.block.fpp",
+			"beginCapture": "string.quoted.double.block.fpp",
 			"patterns": [{ "include": "#string-escape-sequences" }]
 		},
 		"string-escape-sequences": {
@@ -48,34 +48,32 @@
 		"numbers": {
 			"patterns": [{
 				"name": "constant.numeric.integer.decimal.fpp",
-				"match": "\\b(0|[1-9][0-9]*[l|L]?)\\b"
+				"match": "\\b(0|[1-9][0-9]*)(\\s|$)"
 			}, 
 			{
 				"name": "constant.numeric.integer.hex.fpp",
-				"match": "\\b(0[xX][0-9a-fA-F]{1,16})\\b"
+				"match": "\\b(0[xX][0-9a-fA-F]{1,16})(\\s|$)"
 			},
 			{
 				"name": "constant.numeric.floatingPoint.fpp",
-				"match": "\\b(([0-9]+.[0-9]*)|(.[0-9]+))([eE][+-]?[0-9]+)?[fF]?\\b"
-			},
-			{
-				"name": "constant.numeric.floatingPoint.fpp",
-				"match": "\\b(([0-9]+.[0-9]*)|(.[0-9]+))([eE][+-]?[0-9]+)?[fF]?\\b"
+				"match": "\\b(([0-9]+\\.[0-9]*)|(\\.[0-9]+))([eE][+-]?[0-9]+)?[fF]?(\\s|$)"
+			}]
+		},
+		"identifiers": {
+			"patterns": [{
+				"name": "support.variable.parameter .fpp",
+				"match": "\\$?\\w+(\\s|$)"
 			}]
 		},
 		"operators": {
 			"patterns": [
 				{
 					"name": "keyword.operator.fpp",
-					"match": "=|\\+|-|\\*|/|%"
+					"match": "=|\\+|-|\\*|/"
 				},
 				{
-					"name": "keyword.operator.compound.fpp",
-					"match": "\\+=|-=|\\*=|/=|%="
-				},
-				{
-					"name": "keyword.operator.logical.fpp",
-					"match": "&&|\\||!"
+					"name": "keyword.operator.object.fpp",
+					"match": "(->|\\.)"
 				}
 			]
 		},
@@ -195,7 +193,6 @@
 				}
 			]
 		}
-
 	},
 	"scopeName": "source.fpp"
 }
