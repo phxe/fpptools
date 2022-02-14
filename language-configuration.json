@@ -1,0 +1,76 @@
+// This file is controls the following features:
+// Comment toggling
+// Brackets definition
+// Autoclosing
+// Autosurrounding
+// Folding
+// Word pattern
+// Indentation Rules
+// https://code.visualstudio.com/api/language-extensions/language-configuration-guide
+{
+  "comments": {
+    // symbol used for single line comment. Remove this entry if your language does not support line comments
+    "lineComment": "#",
+  },
+  // symbols used as brackets
+  "brackets": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ]
+  ],
+  // symbols that are auto closed when typing
+  "autoClosingPairs": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ],
+    [
+      "\"",
+      "\""
+    ],
+    [
+      "'",
+      "'"
+    ]
+  ],
+  // symbols that can be used to surround a selection
+  "surroundingPairs": [
+    [
+      "{",
+      "}"
+    ],
+    [
+      "[",
+      "]"
+    ],
+    [
+      "(",
+      ")"
+    ],
+    [
+      "\"",
+      "\""
+    ],
+    [
+      "'",
+      "'"
+    ]
+  ]
+}
