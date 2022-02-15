@@ -1,0 +1,49 @@
+{
+	"name": "fpp",
+    "displayName": "FPP",
+    "description": "F Prime Prime Language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.63.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+	"activationEvents": [
+		"onLanguage:fpp"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"languages": [{
+            "id": "fpp",
+            "aliases": ["FPP", "fpp"],
+            "extensions": [".fpp"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "fpp",
+            "scopeName": "source.fpp",
+            "path": "./syntaxes/fpp.tmLanguage.json"
+        }],
+		"semanticTokenScopes": [{
+			"language": "fpp",
+			"scopes": {
+				"property.readonly": ["enum.fpp"]
+			}
+		}]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint . --ext .ts,.tsx",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@types/node": "^12.12.0",
+		"@types/vscode": "^1.42.0",
+		"@typescript-eslint/eslint-plugin": "^4.16.0",
+		"@typescript-eslint/parser": "^4.16.0",
+		"eslint": "^7.21.0",
+		"typescript": "^4.4.3"
+	}
+}
