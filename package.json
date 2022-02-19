@@ -132,6 +132,7 @@
 			"passive": ["keyword.fpp"],
 			"queued": ["keyword.fpp"]
 		}
+	}]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

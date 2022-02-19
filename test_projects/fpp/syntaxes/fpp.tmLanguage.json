@@ -21,7 +21,7 @@
 				{
 					"begin": "\\@",
 					"end": "\\n",
-					"name": "comment.line.at-sign.fpp"
+					"name": "string.regexp.comment.line.at-sign.fpp"
 				}	
 			]
 		},
@@ -34,8 +34,8 @@
 		},
 		"doubleStrings": {
 			"name": "string.quoted.double.fpp",
-			"begin": "\"[^\n]*",
-			"end": "\"",
+			"begin": "\"",
+			"while": "[^\n]*\"",
 			"beginCapture": "string.quoted.double.block.fpp",
 			"patterns": [{ "include": "#string-escape-sequences" }]
 		},

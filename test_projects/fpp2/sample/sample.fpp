@@ -16,4 +16,3 @@ Some examples:
     function.private
 
 An error case:
-    notInLegend

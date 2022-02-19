@@ -69,7 +69,7 @@ class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensPro
 		const lines = text.split(/\r\n|\r|\n/);
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
-			const reg = /((\w+|\d+)|\.)/g; // /\b\S+/g;
+			const reg = /\b\S+/g; // /((\w+|\d+)|\.)/g; 
 			do {
 				const match = reg.exec(line);
 				if (match === null) {
