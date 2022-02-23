@@ -33,11 +33,16 @@
 			"patterns": [{ "include": "#string-escape-sequences" }]
 		},
 		"doubleStrings": {
-			"name": "string.quoted.double.fpp",
 			"begin": "\"",
-			"while": "[^\n]*\"",
-			"beginCapture": "string.quoted.double.block.fpp",
-			"patterns": [{ "include": "#string-escape-sequences" }]
+			"while": "[^\"\n]+\"",
+			"patterns": [
+				{"include": "#string-escape-sequences"},
+				{
+					"match": "[^\"\n(\\\\.)]+",
+					"name": "string.quoted.double.block.fpp"
+				}
+			],
+			"name": "string.quoted.double.fpp"
 		},
 		"string-escape-sequences": {
 			"patterns": [{
@@ -62,7 +67,7 @@
 		"identifiers": {
 			"patterns": [{
 				"name": "support.variable.parameter .fpp",
-				"match": "\\$?\\w+(\\s|$)"
+				"match": "\\b(\\$\\w+|[_a-zA-Z]\\w*)(\\s|$)"
 			}]
 		},
 		"operators": {
