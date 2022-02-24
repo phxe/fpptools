@@ -44,6 +44,21 @@
         "scopeName": "source.fpp",
         "path": "./syntaxes/fpp.tmLanguage.json"
       }
+    ],
+    "semanticTokenTypes": [
+      {
+        "id": "Test",
+        "description": "TEST"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "scopes": {
+          "comment": [
+            "comment.line.number-sign.fpp"
+          ]
+        }
+      }
     ]
   },
   "scripts": {

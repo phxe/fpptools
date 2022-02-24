@@ -88,7 +88,7 @@
     "identifiers": {
       "patterns": [
         {
-          "name": "support.variable.parameter .fpp",
+          "name": "support.variable.parameter.fpp",
           "match": "\\$?\\w+(\\s|$)"
         }
       ]
