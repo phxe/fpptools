@@ -45,21 +45,94 @@
         "path": "./syntaxes/fpp.tmLanguage.json"
       }
     ],
-    "semanticTokenTypes": [
-      {
-        "id": "Test",
-        "description": "TEST"
-      }
-    ],
-    "semanticTokenScopes": [
-      {
-        "scopes": {
-          "comment": [
-            "comment.line.number-sign.fpp"
-          ]
-        }
-      }
-    ]
+	"semanticTokenScopes": [{
+		"language": "fpp",
+		"scopes": {
+			"true": ["boolean.fpp"],
+			"false": ["boolean.fpp"],
+			"U16": ["integer.fpp"],
+			"U32": ["integer.fpp"],
+			"U64": ["integer.fpp"],
+			"U8": ["integer.fpp"],
+			"I16": ["integer.fpp"],
+			"I32": ["integer.fpp"],
+			"I64": ["integer.fpp"],
+			"I8": ["integer.fpp"],
+			"F32": ["storage.fpp"],
+			"F64": ["storage.fpp"],
+			"type": ["support.fpp"],
+			"instance": ["support.fpp"],
+			"id": ["storage.fpp"],
+			"opcode": ["storage.fpp"],
+			"port": ["storage.fpp"],
+			"command": ["storage.fpp"],
+			"phase": ["storage.fpp"],
+			"array": ["storage.fpp"],
+			"queue": ["storage.fpp"],
+			"stack": ["storage.fpp"],
+			"enum": ["storage.fpp"],
+			"struct": ["storage.fpp"],
+			"topology": ["storage.fpp"],
+			"param": ["storage.fpp"],
+			"module": ["storage.fpp"],
+			"component": ["storage.fpp"],
+			"connections": ["storage.fpp"],
+			"orange": ["keyword.fpp"],
+			"yellow": ["keyword.fpp"],
+			"red": ["keyword.fpp"],
+			"match": ["keyword.fpp"],
+			"throttle": ["keyword.fpp"],
+			"cpu": ["keyword.fpp"],
+			"severity": ["keyword.fpp"],
+			"format": ["keyword.fpp"],
+			"activity": ["keyword.fpp"],
+			"warning": ["keyword.fpp"],
+			"diagnostic": ["keyword.fpp"],
+			"fatal": ["keyword.fpp"],
+			"serial": ["keyword.fpp"],
+			"async": ["keyword.fpp"],
+			"guarded": ["keyword.fpp"],
+			"sync": ["keyword.fpp"],
+			"event": ["keyword.fpp"],
+			"telemetry": ["keyword.fpp"],
+			"text": ["keyword.fpp"],
+			"time": ["keyword.fpp"],
+			"assert": ["keyword.fpp"],
+			"block": ["keyword.fpp"],
+			"drop": ["keyword.fpp"],
+			"at": ["keyword.fpp"],
+			"get": ["keyword.fpp"],
+			"set": ["keyword.fpp"],
+			"save": ["keyword.fpp"],
+			"update": ["keyword.fpp"],
+			"always": ["keyword.fpp"],
+			"change": ["keyword.fpp"],
+			"on": ["keyword.fpp"],
+			"with": ["keyword.fpp"],
+			"size": ["keyword.fpp"],
+			"import": ["keyword.fpp"],
+			"include": ["keyword.fpp"],
+			"high": ["keyword.fpp"],
+			"low": ["keyword.fpp"],
+			"input": ["keyword.fpp"],
+			"output": ["keyword.fpp"],
+			"recv": ["keyword.fpp"],
+			"reg": ["keyword.fpp"],
+			"resp": ["keyword.fpp"],
+			"base": ["keyword.fpp"],
+			"internal": ["keyword.fpp"],
+			"priority": ["keyword.fpp"],
+			"ref": ["keyword.fpp"],
+			"default": ["keyword.fpp"],
+			"locate": ["keyword.fpp"],
+			"constant": ["keyword.fpp"],
+			"private": ["keyword.fpp"],
+			"health": ["keyword.fpp"],
+			"active": ["keyword.fpp"],
+			"passive": ["keyword.fpp"],
+			"queued": ["keyword.fpp"]
+		}
+	}]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
