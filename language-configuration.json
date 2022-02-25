@@ -69,10 +69,11 @@
       "\""
     ]
   ],
+  // fold and unfold regions defined by start and end markers
   "folding": {
     "markers": {
-      "start": "^\\s*#region\\b",
-      "end": "^\\s*#endregion\\b"
+      "start": "^\\s*<\\s*REGION\\s*\\w*\\s*>",
+      "end": "^\\s*<\\s*ENDREGION\\b\\s*>"
     }
   },
     "wordPattern": "([^\\s\\{\\}\\[\\]\\(\\)\\/\\\\\\#\\@\\*\\+\\-\\=\\;\\:\\'\\&\\~\\!\\%\"\\,\\.\\<\\>\\?\\|\\`\\^]+)|(-?\\d*.\\d*)"
