@@ -67,6 +67,10 @@
     [
       "\"",
       "\""
+    ],
+    [
+      "'",
+      "'"
     ]
   ],
   // fold and unfold regions defined by start and end markers
