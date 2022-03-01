@@ -19,7 +19,12 @@
       {
         "command": "fpp.example",
         "title": "F``: Example"
-      }
+      },
+	  {
+		  "command": "fpptools.check",
+		  "title": "Check Semantics",
+		  "category": "F`` Tools"
+	  }
     ],
     "languages": [
       {

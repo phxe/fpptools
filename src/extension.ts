@@ -12,6 +12,14 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage("Example launched!");
   });
 
+  //fpptools commands
+  vscode.commands.registerCommand("fpptools.check", () => {
+    vscode.window.showInformationMessage("F`` Tools: Check Semantics Tool Test...");
+    // Could either have the user select a file using showOpenDialog,
+    // or use the current file in the editor
+
+  });
+
   // const legend = (function () {
   //   const tokenTypesLegend = [
   //     // Custom
