@@ -2,27 +2,13 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "fpp",
   "patterns": [
-    {
-      "include": "#comments"
-    },
-    {
-      "include": "#tripleStrings"
-    },
-    {
-      "include": "#doubleStrings"
-    },
-    {
-      "include": "#numbers"
-    },
-    {
-      "include": "#operators"
-    },
-    {
-      "include": "#reserved-words"
-    },
-    {
-      "include": "#identifiers"
-    }
+    {"include": "#comments"},
+    {"include": "#tripleStrings"},
+    {"include": "#doubleStrings"},
+    {"include": "#numbers"},
+    {"include": "#operators"},
+    {"include": "#reserved-words"},
+    {"include": "#identifiers"}
   ],
   "repository": {
     "comments": {
@@ -51,15 +37,16 @@
       ]
     },
     "doubleStrings": {
-      "name": "string.quoted.double.fpp",
-      "begin": "\"[^\n]*",
-      "end": "\"",
-      "beginCapture": "string.quoted.double.block.fpp",
-      "patterns": [
-        {
-          "include": "#string-escape-sequences"
-        }
-      ]
+       "name": "string.quoted.double.fpp",
+       "begin": "\"",
+       "while": "[^\"\n]+\"",
+       "patterns": [
+           {"include": "#string-escape-sequences"},
+           {
+                "match": "[^\"\n(\\\\.)]+",
+                "name": "string.quoted.double.block.fpp"
+           }
+       ]
     },
     "string-escape-sequences": {
       "patterns": [
@@ -89,7 +76,7 @@
       "patterns": [
         {
           "name": "support.variable.parameter.fpp",
-          "match": "\\$?\\w+(\\s|$)"
+          "match": "\\b(\\$\\w+|[_a-zA-Z]\\w*)(\\s|$)"
         }
       ]
     },
