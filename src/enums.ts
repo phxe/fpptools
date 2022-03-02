@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-export enum Symbols {
+export enum Operators {
   rparen = ")",
   rbracket = "]",
   rbrace = "}",
@@ -16,24 +16,18 @@ export enum Symbols {
   equals = "=",
   lbracket = "[",
   lbrace = "{",
+}
+
+export enum Symbols {
   comment = "#",
   preannotation = "@",
   postannotation = "@<",
 }
 
-// export const enum FPPTokenTypes {
-//   reservedWord,
-//   identifier,
-//   literalFloat,
-//   literalInt,
-//   literalString,
-//   postAnnotation,
-//   preAnnotation,
-//   symbol,
-//   eol,
-// }
+export enum Modifiers {}
 
 export enum Types {
+  // Numeric types
   "F32",
   "F64",
   "I16",
@@ -44,29 +38,25 @@ export enum Types {
   "U32",
   "U64",
   "U8",
+  // Unique types
+  "bool",
+  "string",
+  "array",
+  "struct",
+  "enum",
+  // Abstract type
+  "type",
 }
 
 export enum Keywords {
-  "F32",
-  "F64",
-  "I16",
-  "I32",
-  "I64",
-  "I8",
-  "U16",
-  "U32",
-  "U64",
-  "U8",
   "active",
   "activity",
   "always",
-  "array",
   "assert",
   "async",
   "at",
   "base",
   "block",
-  "bool",
   "change",
   "command",
   "component",
@@ -76,7 +66,6 @@ export enum Keywords {
   "default",
   "diagnostic",
   "drop",
-  "enum",
   "event",
   "false",
   "fatal",
@@ -118,8 +107,6 @@ export enum Keywords {
   "severity",
   "size",
   "stack",
-  "string",
-  "struct",
   "sync",
   "telemetry",
   "text",
@@ -127,7 +114,6 @@ export enum Keywords {
   "time",
   "topology",
   "true",
-  "type",
   "update",
   "warning",
   "with",

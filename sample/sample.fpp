@@ -48,18 +48,22 @@ U16
 U32
 U64
 U8
+array
+bool
+enum
+string
+struct
+type
 
 Keywords:
 active
 activity
 always
-array
 assert
 async
 at
 base
 block
-bool
 change
 command
 component
@@ -69,7 +73,6 @@ cpu
 default
 diagnostic
 drop
-enum
 event
 false
 fatal
@@ -111,8 +114,6 @@ set
 severity
 size
 stack
-string
-struct
 sync
 telemetry
 text
@@ -120,7 +121,6 @@ throttle
 time
 topology
 true
-type
 update
 warning
 with
