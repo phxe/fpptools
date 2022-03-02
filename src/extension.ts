@@ -8,12 +8,15 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage("Example launched!");
   });
 
-  //fpptools commands
+  //fpptools commands test
   vscode.commands.registerCommand("fpptools.check", () => {
     vscode.window.showInformationMessage(
       "F`` Tools: Check Semantics Tool Test..."
     );
     // Could either have the user select a file using showOpenDialog,
+    // Try forcing '.fpp' files, or select multiple? entire folder?
+    vscode.window.showOpenDialog();
+
     // or use the current file in the editor
   });
 
