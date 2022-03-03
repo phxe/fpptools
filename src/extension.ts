@@ -20,13 +20,13 @@ export function activate(context: vscode.ExtensionContext) {
     // or use the current file in the editor
   });
 
-  context.subscriptions.push(
-    vscode.languages.registerDocumentSemanticTokensProvider(
-      { language: "fpp" },
-      new DocumentSemanticTokensProvider(),
-      legend
-    )
-  );
+  // context.subscriptions.push(
+  //   vscode.languages.registerDocumentSemanticTokensProvider(
+  //     { language: "fpp" },
+  //     new DocumentSemanticTokensProvider(),
+  //     legend
+  //   )
+  // );
 }
 
 export function deactivate() {}
