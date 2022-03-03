@@ -2,13 +2,27 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "fpp",
   "patterns": [
-    {"include": "#comments"},
-    {"include": "#tripleStrings"},
-    {"include": "#doubleStrings"},
-    {"include": "#numbers"},
-    {"include": "#operators"},
-    {"include": "#reserved-words"},
-    {"include": "#identifiers"}
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#tripleStrings"
+    },
+    {
+      "include": "#doubleStrings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#reserved-words"
+    },
+    {
+      "include": "#identifiers"
+    }
   ],
   "repository": {
     "comments": {
@@ -19,9 +33,14 @@
           "name": "comment.line.number-sign.fpp"
         },
         {
+          "begin": "\\@<",
+          "end": "\\n",
+          "name": "annotation.line.post.fpp"
+        },
+        {
           "begin": "\\@",
           "end": "\\n",
-          "name": "comment.line.at-sign.fpp"
+          "name": "annotation.line.pre.fpp"
         }
       ]
     },
@@ -37,16 +56,18 @@
       ]
     },
     "doubleStrings": {
-       "name": "string.quoted.double.fpp",
-       "begin": "\"",
-       "while": "[^\"\n]+\"",
-       "patterns": [
-           {"include": "#string-escape-sequences"},
-           {
-                "match": "[^\"\n(\\\\.)]+",
-                "name": "string.quoted.double.block.fpp"
-           }
-       ]
+      "name": "string.quoted.double.fpp",
+      "begin": "\"",
+      "while": "[^\"\n]+\"",
+      "patterns": [
+        {
+          "include": "#string-escape-sequences"
+        },
+        {
+          "match": "[^\"\n(\\\\.)]+",
+          "name": "string.quoted.double.block.fpp"
+        }
+      ]
     },
     "string-escape-sequences": {
       "patterns": [

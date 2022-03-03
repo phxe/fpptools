@@ -1,12 +1,12 @@
-Available token types:
+# Available token types:
     [comment] [string] [keyword] [number] [regexp] [operator] [namespace]
     [type] [struct] [class] [interface] [enum] [typeParameter] [function]
     [method] [macro] [variable] [parameter] [property] [label] [decorator]
-Available token modifiers:
+# Available token modifiers:
     [type.declaration] [type.documentation] [type.readonly] [type.static]
     [type.abstract] [type.deprecated] [type.modification] [type.async]
 
-Some examples:
+# Some examples:
     [class.static.token]     [type.static.abstract]
     [class.static.token]     [type.static]
 
@@ -14,10 +14,10 @@ Some examples:
 
     [function.private]
 
-An error case:
+# An error case:
     [notInLegend]
 
-Symbols:
+# Symbols:
 )
 ]
 }
@@ -26,7 +26,7 @@ Symbols:
 +
 ,
 -
->
+->
 .
 /
 :
@@ -36,8 +36,9 @@ Symbols:
 {
 #
 @
+@<
 
-Types:
+# Types:
 F32
 F64
 I16
@@ -55,7 +56,7 @@ string
 struct
 type
 
-Keywords:
+# Keywords:
 active
 activity
 always

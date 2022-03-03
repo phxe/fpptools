@@ -1,27 +1,28 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export enum Operators {
-  rparen = ")",
-  rbracket = "]",
-  rbrace = "}",
-  lparen = "(",
-  star = "*",
-  plus = "+",
-  comma = ",",
-  minus = "-",
-  rarrow = "->",
-  dot = ".",
-  slash = "/",
-  colon = ":",
-  semi = ";",
-  equals = "=",
-  lbracket = "[",
-  lbrace = "{",
+  RPAREN = ")",
+  RBRACKET = "]",
+  RBRACE = "}",
+  LPAREN = "(",
+  STAR = "*",
+  PLUS = "+",
+  COMMA = ",",
+  MINUS = "-",
+  RARROW = "->",
+  DOT = ".",
+  SLASH = "/",
+  COLON = ":",
+  SEMI = ";",
+  EQUALS = "=",
+  LBRACKET = "[",
+  LBRACE = "{",
 }
 
 export enum Symbols {
-  comment = "#",
-  preannotation = "@",
-  postannotation = "@<",
+  COMMENT = "#",
+  PREANNOTATION = "@",
+  POSTANNOTATION = "@<",
+  DOUBLEQUOTE = '"',
 }
 
 export enum Modifiers {}

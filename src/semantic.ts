@@ -4,6 +4,13 @@ import * as Enum from "./enums";
 const tokenTypes = new Map<string, number>();
 const tokenModifiers = new Map<string, number>();
 
+enum BreakType {
+  null,
+  space,
+  operator,
+  symbol,
+}
+
 export const legend = (function () {
   const tokenTypesLegend = [
     // Custom
@@ -112,14 +119,17 @@ export class DocumentSemanticTokensProvider
     return result;
   }
 
-  private _isBreakpoint(char: string): boolean {
+  private _isBreakpoint(char: string): number {
     if (char === " ") {
-      return true;
+      return BreakType.space;
     }
     if (this._isEnumValue(char, Enum.Operators)) {
-      return true;
+      return BreakType.operator;
     }
-    return false;
+    if (this._isEnumValue(char, Enum.Symbols)) {
+      return BreakType.symbol;
+    }
+    return BreakType.null;
   }
 
   private _isEnumValue(str: string, e: any): boolean {
@@ -140,38 +150,20 @@ export class DocumentSemanticTokensProvider
     return false;
   }
 
-  // private _isKeyword(str: string): boolean {
-  //   for (let i in Keywords) {
-  //     if (str === Keywords[i]) {
-  //       return true;
-  //     }
-  //   }
-  //   return false;
-  // }
-  // private _isType(str: string): boolean {
-  //   for (let i in Types) {
-  //     if (str === Types[i]) {
-  //       return true;
-  //     }
-  //   }
-  //   return false;
-  // }
-
   // Add line continuations
   private _parseText(text: string): IParsedToken[] {
-    const r: IParsedToken[] = [];
+    const t: IParsedToken[] = [];
     const lines = text.split(/\r\n|\r|\n/);
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       let eol = lines[i].length;
-      let currentIndex = -1;
+      let currentIndex = 0;
 
-      do {
-        currentIndex++;
-        // if (lines[i][currentIndex] === "#" || lines[i][currentIndex] === "@") {
-        //   // Comment or annotation - Ignore rest of line
-        //   break;
-        // }
+      while (currentIndex < eol) {
+        if (lines[i][currentIndex] === " ") {
+          currentIndex++;
+          continue;
+        }
         let openIndex = currentIndex;
         while (
           !this._isBreakpoint(lines[i][currentIndex]) &&
@@ -179,37 +171,62 @@ export class DocumentSemanticTokensProvider
         ) {
           currentIndex++;
         }
-        // if (openIndex === currentIndex) {
-        //   continue;
-        // }
+
+        if (currentIndex === openIndex) {
+          // Handle multi-character operators/symbols
+          switch (lines[i][currentIndex] + lines[i][currentIndex + 1]) {
+            case Enum.Symbols.POSTANNOTATION:
+            case Enum.Operators.RARROW:
+              currentIndex++;
+            default:
+              break;
+          }
+          currentIndex++;
+        }
+
         let closeIndex = currentIndex;
 
-        let tmp = [""];
-        r.push({
+        let tokenType = this._parseTextToken(
+          line.substring(openIndex, closeIndex)
+        );
+
+        t.push({
           line: i,
           startCharacter: openIndex,
           length: closeIndex - openIndex + 1,
-          tokenType: this._parseTextToken(
-            line.substring(openIndex, closeIndex)
-          ),
-          tokenModifiers: tmp,
+          tokenType: tokenType,
+          tokenModifiers: [],
         });
-      } while (currentIndex < eol);
+
+        // Tokenize remaining line for comments and annotations
+        if (tokenType === "comment" || tokenType === "annotation") {
+          t.push({
+            line: i,
+            startCharacter: closeIndex - 1,
+            length: eol - closeIndex + 1,
+            tokenType: tokenType,
+            tokenModifiers: [],
+          });
+          currentIndex = eol;
+        }
+      }
     }
-    return r;
+    return t;
   }
 
   private _parseTextToken(text: string): string {
-    if (this._isEnumMember(text, Enum.Keywords)) {
-      return "keyword";
+    /* eslint-disable curly */
+    switch (text) {
+      case Enum.Symbols.COMMENT:
+        return "comment";
+      case Enum.Symbols.PREANNOTATION:
+        return "annotation";
+      case Enum.Symbols.POSTANNOTATION:
+        return "annotation";
     }
-    if (this._isEnumMember(text, Enum.Types)) {
-      return "type";
-    }
-    if (this._isEnumMember(text, Enum.Operators)) {
-      return "operator";
-    }
-
+    if (this._isEnumMember(text, Enum.Types)) return "type";
+    if (this._isEnumMember(text, Enum.Operators)) return "operator";
+    if (this._isEnumMember(text, Enum.Keywords)) return "keyword";
     return "identifier";
   }
 }
