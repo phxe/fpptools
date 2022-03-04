@@ -39,7 +39,25 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     // select a file or multiple files (folders set to false in options)
-    vscode.window.showOpenDialog(options);
+    vscode.window.showOpenDialog(options).then(fileUri => {
+      if (fileUri && fileUri.length > 0) {
+        // show info message stating the file count
+        vscode.window.showInformationMessage("You have selected " + fileUri.length + " file/s.");
+
+        // print file name of each selected file
+        for (var f = 0; f < fileUri.length; f++) {
+          let filepath: string = fileUri[f].fsPath;
+          let filename: string = filepath.replace(/^.*[\\\/]/, '');
+
+          // show file name as an info message
+          //vscode.window.showInformationMessage("File " + (f+1) + ": " + filename);
+
+          // print file name to the debug console
+          console.log("File " + (f+1) + ": " + filename);
+
+        }
+      }
+    })
 
     // once file/s selected:
     //    1. parse each file, generate list of translation units
