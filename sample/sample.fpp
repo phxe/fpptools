@@ -1,7 +1,7 @@
 Available token types:
     [comment] [string] [keyword] [number] [regexp] [operator] [namespace]
     [type] [struct] [class] [interface] [enum] [typeParameter] [function]
-    [method] [macro] [variable] [parameter] [property] [label] [decorator]
+    [method] [macro] [variable] [parameter] [property] [label] [decorator] [tuple]
 Available token modifiers:
     [type.declaration] [type.documentation] [type.readonly] [type.static]
     [type.abstract] [type.deprecated] [type.modification] [type.async]
@@ -122,6 +122,7 @@ time
 topology
 true
 update
+void
 warning
 with
 yellow
