@@ -11,6 +11,7 @@
   ],
   "activationEvents": [
     "onCommand:fpp.example",
+	"onCommand:fpptools.filenames",
     "onLanguage:fpp"
   ],
   "main": "./out/extension.js",
@@ -24,6 +25,11 @@
 		  "command": "fpptools.check",
 		  "title": "Check Semantics",
 		  "category": "F`` Tools"
+	  },
+	  {
+		  "command": "fpptools.filenames",
+		  "title": "Write File Names",
+		  "category": "F'' Tools"
 	  }
     ],
     "languages": [
