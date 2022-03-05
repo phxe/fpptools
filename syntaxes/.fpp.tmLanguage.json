@@ -35,12 +35,12 @@
         {
           "begin": "\\@<",
           "end": "\\n",
-          "name": "annotation.line.post.fpp"
+          "name": "comment.line.postannotation.fpp"
         },
         {
           "begin": "\\@",
           "end": "\\n",
-          "name": "annotation.line.pre.fpp"
+          "name": "comment.line.preannotation.fpp"
         }
       ]
     },

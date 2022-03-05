@@ -43,11 +43,17 @@
         "configuration": "./language-configuration.json"
       }
     ],
-    "grammars": [
+    "semanticTokenTypes": [
       {
-        "language": "fpp",
-        "scopeName": "source.fpp",
-        "path": "./syntaxes/fpp.tmLanguage.json"
+        "id": "annotation",
+        "superType": "comment",
+        "description": "FPP pre- and post- annotation."
+      }
+    ],
+    "semanticTokenModifiers": [
+      {
+        "id": "example",
+        "description": "example"
       }
     ]
   },

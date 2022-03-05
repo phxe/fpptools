@@ -1,15 +1,9 @@
+import { close, open } from "fs";
 import * as vscode from "vscode";
 import * as Enum from "./enums";
 
 const tokenTypes = new Map<string, number>();
 const tokenModifiers = new Map<string, number>();
-
-enum BreakType {
-  null,
-  space,
-  operator,
-  symbol,
-}
 
 export const legend = (function () {
   const tokenTypesLegend = [
@@ -17,7 +11,7 @@ export const legend = (function () {
     "annotation",
     // Standard (comment unused)
     "namespace", // For identifiers that declare or reference a namespace, module, or package.
-    "class", // For identifiers that declare or reference a class type.
+    // "class", // For identifiers that declare or reference a class type.
     "enum", // For identifiers that declare or reference an enumeration type.
     "interface", // For identifiers that declare or reference an interface type.
     "struct", // For identifiers that declare or reference a struct type.
@@ -40,9 +34,7 @@ export const legend = (function () {
     "regexp", // For tokens that represent a regular expression literal.
     "operator", // For tokens that represent an operator.
   ];
-  tokenTypesLegend.forEach((tokenType, index) =>
-    tokenTypes.set(tokenType, index)
-  );
+  tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
 
   const tokenModifiersLegend = [
     // Custom
@@ -58,14 +50,9 @@ export const legend = (function () {
     "documentation", // For occurrences of symbols in documentation.
     "defaultLibrary", // For symbols that are part of the standard library.
   ];
-  tokenModifiersLegend.forEach((tokenModifier, index) =>
-    tokenModifiers.set(tokenModifier, index)
-  );
+  tokenModifiersLegend.forEach((tokenModifier, index) => tokenModifiers.set(tokenModifier, index));
 
-  return new vscode.SemanticTokensLegend(
-    tokenTypesLegend,
-    tokenModifiersLegend
-  );
+  return new vscode.SemanticTokensLegend(tokenTypesLegend, tokenModifiersLegend);
 })();
 
 interface IParsedToken {
@@ -76,9 +63,7 @@ interface IParsedToken {
   tokenModifiers: string[];
 }
 
-export class DocumentSemanticTokensProvider
-  implements vscode.DocumentSemanticTokensProvider
-{
+export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
   async provideDocumentSemanticTokens(
     document: vscode.TextDocument,
     token: vscode.CancellationToken
@@ -119,96 +104,100 @@ export class DocumentSemanticTokensProvider
     return result;
   }
 
-  private _isBreakpoint(char: string): number {
-    if (char === " ") {
-      return BreakType.space;
+  private _getCloseIndex(text: string, curr: number): number {
+    while (!this._isBreakpoint(text[curr]) && curr < text.length) {
+      curr++;
     }
-    if (this._isEnumValue(char, Enum.Operators)) {
-      return BreakType.operator;
+    // Check float vs dot expression
+    if (text[curr] === "." && this._isInteger(text[curr + 1])) {
+      return this._getCloseIndex(text, curr + 1);
     }
-    if (this._isEnumValue(char, Enum.Symbols)) {
-      return BreakType.symbol;
-    }
-    return BreakType.null;
-  }
-
-  private _isEnumValue(str: string, e: any): boolean {
-    for (let i in e) {
-      if (str === e[i as keyof typeof e]) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private _isEnumMember(str: string, e: any): boolean {
-    for (let i in e) {
-      if (str === e[i]) {
-        return true;
-      }
-    }
-    return false;
+    return curr;
   }
 
   // Add line continuations
   private _parseText(text: string): IParsedToken[] {
     const t: IParsedToken[] = [];
+    const m: string[] = [""];
     const lines = text.split(/\r\n|\r|\n/);
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      let eol = lines[i].length;
       let currentIndex = 0;
 
-      while (currentIndex < eol) {
+      // Scan line
+      while (currentIndex < lines[i].length) {
         if (lines[i][currentIndex] === " ") {
           currentIndex++;
           continue;
         }
-        let openIndex = currentIndex;
-        while (
-          !this._isBreakpoint(lines[i][currentIndex]) &&
-          currentIndex < eol
-        ) {
-          currentIndex++;
-        }
 
-        if (currentIndex === openIndex) {
-          // Handle multi-character operators/symbols
-          switch (lines[i][currentIndex] + lines[i][currentIndex + 1]) {
+        // Scan token
+        let openIndex = currentIndex;
+        let closeIndex = this._getCloseIndex(lines[i], currentIndex);
+
+        // Handle multi-character operators/symbols
+        if (closeIndex === openIndex) {
+          switch (lines[i][closeIndex] + lines[i][closeIndex + 1]) {
             case Enum.Symbols.POSTANNOTATION:
             case Enum.Operators.RARROW:
-              currentIndex++;
+              closeIndex++;
             default:
               break;
           }
-          currentIndex++;
+          closeIndex++;
         }
+        currentIndex = closeIndex;
 
-        let closeIndex = currentIndex;
+        let tokenType = this._parseTextToken(line.substring(openIndex, closeIndex));
 
-        let tokenType = this._parseTextToken(
-          line.substring(openIndex, closeIndex)
-        );
+        let tokenModifiers = [""];
+
+        // if (tokenType === "keyword" || tokenType === "type") {
+        //   // certain keywords?
+        //   m.push(line.substring(openIndex, closeIndex));
+        // } else if (tokenType === "identifier") {
+        //   m.forEach((str) => {
+        //     if (Enum.Keywords[str as keyof typeof Enum.Keywords] !== undefined) {
+        //       tokenType = Enum.Keywords[str as keyof typeof Enum.Keywords];
+        //     } else if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
+        //       tokenType = Enum.Types[str as keyof typeof Enum.Types];
+        //     }
+        //     if (Object.keys(Enum.Keywords)) {
+        //     }
+
+        //     tokenModifiers.push();
+        //   });
+        //   tokenModifiers = m;
+        // }
+
+        switch (tokenType) {
+          case "QUOTE":
+            tokenType = "string";
+            break;
+          case "TRIPLEQUOTE":
+            tokenType = "string";
+            break;
+          // Tokenize remaining line for comments and annotations
+          case "comment":
+          case "annotation":
+            t.push({
+              line: i,
+              startCharacter: closeIndex,
+              length: lines[i].length - closeIndex,
+              tokenType: tokenType,
+              tokenModifiers: [],
+            });
+            currentIndex = lines[i].length;
+            break;
+        }
 
         t.push({
           line: i,
           startCharacter: openIndex,
-          length: closeIndex - openIndex + 1,
+          length: closeIndex - openIndex,
           tokenType: tokenType,
-          tokenModifiers: [],
+          tokenModifiers: tokenModifiers,
         });
-
-        // Tokenize remaining line for comments and annotations
-        if (tokenType === "comment" || tokenType === "annotation") {
-          t.push({
-            line: i,
-            startCharacter: closeIndex - 1,
-            length: eol - closeIndex + 1,
-            tokenType: tokenType,
-            tokenModifiers: [],
-          });
-          currentIndex = eol;
-        }
       }
     }
     return t;
@@ -217,6 +206,10 @@ export class DocumentSemanticTokensProvider
   private _parseTextToken(text: string): string {
     /* eslint-disable curly */
     switch (text) {
+      case Enum.Symbols.TRIPLEQUOTE:
+        return "TRIPLEQUOTE";
+      case Enum.Symbols.QUOTE:
+        return "QUOTE";
       case Enum.Symbols.COMMENT:
         return "comment";
       case Enum.Symbols.PREANNOTATION:
@@ -225,8 +218,83 @@ export class DocumentSemanticTokensProvider
         return "annotation";
     }
     if (this._isEnumMember(text, Enum.Types)) return "type";
-    if (this._isEnumMember(text, Enum.Operators)) return "operator";
     if (this._isEnumMember(text, Enum.Keywords)) return "keyword";
-    return "identifier";
+    if (this._isEnumValue(text, Enum.Operators)) return "operator";
+    if (this._isNumber(text)) return "number";
+    if (this._isIdentifier(text)) return "identifier";
+    return "";
+  }
+
+  private _isIdentifier(str: string): boolean {
+    if (str[0] === "$" && str[1] !== "$")
+      return this._isIdentifier(str.substring(1, str.length - 2));
+    if (!(this._isAlpha(str[0]) || str[0] === "_")) return false;
+    for (var i = 0; i < str.length; i++) {
+      if (!(this._isAlpha(str[i]) || this._isInteger(str[i]) || str[i] === "_")) return false;
+    }
+    return true;
+  }
+
+  private _isAlpha(str: string): boolean {
+    for (var i = 0; i < str.length; i++) {
+      if (str[i].toLowerCase() < "a" || str[i].toLowerCase() > "z") return false;
+    }
+    return true;
+  }
+
+  private _isNumber(str: string): boolean {
+    if (str[0] === "-" && str[1] !== "-") return this._isNumber(str.substring(1, str.length));
+    if (str[0] + str[1].toLowerCase() === "0x") return this._isHex(str.substring(2, str.length));
+    if (str.includes(".")) return this._isFloat(str);
+    return this._isInteger(str);
+  }
+
+  private _isHex(str: string): boolean {
+    for (var i = 0; i < str.length; i++) {
+      if (!((str[i].toLowerCase() > "a" && str[i].toLowerCase() < "f") || this._isInteger(str[i])))
+        return false;
+    }
+    return true;
+  }
+
+  private _isFloat(str: string): boolean {
+    return (
+      this._isInteger(str.substring(0, str.indexOf("."))) &&
+      this._isInteger(str.substring(str.indexOf(".") + 1, str.length))
+    );
+  }
+
+  private _isInteger(str: string): boolean {
+    for (var i = 0; i < str.length; i++) {
+      if (str[i] < "0" || str[i] > "9") return false;
+    }
+    return true;
+  }
+
+  private _isBreakpoint(char: string): boolean {
+    if (char === " ") {
+      return true;
+    }
+    if (this._isEnumValue(char, Enum.Symbols)) {
+      return true;
+    }
+    if (this._isEnumValue(char, Enum.Operators)) {
+      return true;
+    }
+    return false;
+  }
+
+  private _isEnumValue(str: string, e: any): boolean {
+    if (Object.values(e).includes(str as any as typeof e)) {
+      return true;
+    }
+    return false;
+  }
+
+  private _isEnumMember(str: string, e: any): boolean {
+    if (e[str as keyof typeof e] !== undefined) {
+      return true;
+    }
+    return false;
   }
 }

@@ -1,21 +1,24 @@
-# Available token types:
-    [comment] [string] [keyword] [number] [regexp] [operator] [namespace]
-    [type] [struct] [class] [interface] [enum] [typeParameter] [function]
-    [method] [macro] [variable] [parameter] [property] [label] [decorator]
-# Available token modifiers:
-    [type.declaration] [type.documentation] [type.readonly] [type.static]
-    [type.abstract] [type.deprecated] [type.modification] [type.async]
+# Code Snippets:
+module RealModule {
+  constant realIdentifier = 10 * 0.36 * 0x2020
+}
 
-# Some examples:
-    [class.static.token]     [type.static.abstract]
-    [class.static.token]     [type.static]
+instance blockDrv: Drv.BlockDriver base id 0x0100 \
+  queue size RealModule.realIdentifier \
+  stack size FakeModule.fakeIdentifier \
+  priority 140 \
+{
+  phase Fpp.ToCpp.Phases.instances """
+  // Declared in RefTopologyDefs.cpp
+  """
+}
 
-    [struct]
+enum AnEnum {
+  ENUM_MEMBER
+}
 
-    [function.private]
-
-# An error case:
-    [notInLegend]
+AnEnum.ENUM_MEMBER
+NotAnEnum.ENUM_MEMBER
 
 # Symbols:
 )
