@@ -13,19 +13,9 @@
     "lineComment": "#",
   },
   // symbols used as brackets
+  // updated for FPP brackets (note, brackets are also apart of symbol tokens in FPP)
   "brackets": [
-    [
-      "{",
-      "}"
-    ],
-    [
-      "[",
-      "]"
-    ],
-    [
-      "(",
-      ")"
-    ]
+    ["[", "]"]
   ],
   // symbols that are auto closed when typing
   "autoClosingPairs": [
