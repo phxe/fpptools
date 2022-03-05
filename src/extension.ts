@@ -9,15 +9,39 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   //fpptools commands test
+
+  // fpp tools commands test: fpp check
+  //    this command will perform semantic checking of FPP models using the fpp-check tool.
+  //    input: a file or list of files
+  //    output: If the check succeeds, then no standard output; otherwise an error message.
   vscode.commands.registerCommand("fpptools.check", () => {
     vscode.window.showInformationMessage(
       "F`` Tools: Check Semantics Tool Test..."
     );
-    // Could either have the user select a file using showOpenDialog,
-    // Try forcing '.fpp' files, or select multiple? entire folder?
-    vscode.window.showOpenDialog();
 
-    // or use the current file in the editor
+    // users will be able to select multiple files. Only .FPP files will appear.
+    var options: vscode.OpenDialogOptions = {
+      canSelectMany: true,
+      filters: {
+        'FPP Files': ['fpp']
+      }
+    }
+    // if we have a current workspace folder, we will default to that. Otherwise,
+    // open up the file explorer without a default filepath.
+    if(vscode.workspace.workspaceFolders !== undefined) {
+      let filepath = vscode.workspace.workspaceFolders[0].uri
+      options.defaultUri = filepath
+    }
+    vscode.window.showOpenDialog(options).then(files => {
+      if (files){
+        for (var uri of files) {
+          vscode.window.showInformationMessage(
+            "Selected File: " + uri.fsPath
+          )
+        }
+      }
+    })
+    // TODO: once filepaths are obtained, files will be checked using the fpp-check tool in some way.
   });
 
   // fpp tools commands test: fpp filenames
