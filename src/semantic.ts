@@ -119,9 +119,8 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     const t: IParsedToken[] = [];
     const m: string[] = [""];
     const lines = text.split(/\r\n|\r|\n/);
-    // let isContinuation = false;
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+      let line = lines[i];
       let currentIndex = 0;
 
       // Scan line
@@ -199,8 +198,72 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             tokenType = "string";
             break;
           case Enum.Symbols.TRIPLEQUOTE:
-            //
+            // brute force method - feel free to optimize
+            // WIP
+            let str;
+            console.log('first line', line);
             tokenType = "string";
+            if(line.indexOf('"""') === line.lastIndexOf('"""')) {
+              str = line.substring(line.indexOf('"""'));
+              console.log('first case');
+              console.log(str);
+              t.push({
+                line: i,
+                startCharacter: line.indexOf('"""'),
+                length: line.length - line.indexOf('"""'),
+                tokenType: tokenType,
+                tokenModifiers: tokenModifiers,
+              });
+            } else {
+              str = line.substring(line.indexOf('"""'), line.lastIndexOf('"""') + 3);
+              console.log('second case');
+              console.log(str);
+              t.push({
+                line: i,
+                startCharacter: line.indexOf('"""'),
+                length: line.length - line.indexOf('"""'),
+                tokenType: tokenType,
+                tokenModifiers: tokenModifiers,
+              });
+              break;
+            }
+            // push every line until we find """
+            // """
+            // test """
+            // """ asdfasdf
+            for (let j = i + 1; j < lines.length; j++) {
+              console.log('enter loop');
+              line = lines[j];
+              console.log(line);
+              // find '"""'
+              if ((line.indexOf('"""') === 0 && line.length === 3) || line.indexOf('"""') + 3 === line.length) {
+                console.log('third case');
+                openIndex = 0;
+                closeIndex = line.length;
+                console.log(str);
+                i = j;
+                break;
+              } else if (line.indexOf('"""') > 0 && line.indexOf('"""') < line.length ) {
+                console.log('maybe');
+                str = line.substring(0, line.indexOf('"""') + 3);
+                openIndex = 0;
+                closeIndex = str.length;
+                console.log(str);
+                i = j;
+                break;
+              } else {
+                console.log('else');
+                console.log(line);
+                t.push({
+                  line: j,
+                  startCharacter: 0,
+                  length: line.length,
+                  tokenType: tokenType,
+                  tokenModifiers: tokenModifiers,
+                });
+              }
+            }
+            console.log('exit loop');
             break;
           // Tokenize remaining line for comments and annotations
           case "comment":

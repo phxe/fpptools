@@ -13,6 +13,12 @@ instance blockDrv: Drv.BlockDriver base id 0x0100 \
   """
 }
 
+   """ test again with multi line comments
+   """
+
+   """ test again
+   this is a comment """
+
 enum AnEnum {
   ENUM_MEMBER
 }
