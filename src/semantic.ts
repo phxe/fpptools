@@ -152,23 +152,29 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
 
         let tokenModifiers = [""];
 
-        // if (tokenType === "keyword" || tokenType === "type") {
-        //   // certain keywords?
-        //   m.push(line.substring(openIndex, closeIndex));
-        // } else if (tokenType === "identifier") {
-        //   m.forEach((str) => {
-        //     if (Enum.Keywords[str as keyof typeof Enum.Keywords] !== undefined) {
-        //       tokenType = Enum.Keywords[str as keyof typeof Enum.Keywords];
-        //     } else if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
-        //       tokenType = Enum.Types[str as keyof typeof Enum.Types];
-        //     }
-        //     if (Object.keys(Enum.Keywords)) {
-        //     }
+        if (tokenType === "keyword" || tokenType === "type") {
+          // certain keywords?
+          m.push(line.substring(openIndex, closeIndex));
+          // focus on individual strings "module" and what comes after
+          // then storing the data into tokenModifiers 
+        } else if (tokenType === "identifier") {
+          m.forEach((str) => {
+            // for all things pushed on stack
+            if (Enum.Keywords[str as keyof typeof Enum.Keywords] !== undefined) {
+              tokenType = Enum.Keywords[str as keyof typeof Enum.Keywords];
+            } else if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
+              tokenType = Enum.Types[str as keyof typeof Enum.Types];
+            }
+            if (Object.keys(Enum.Keywords)) {
+              // if something is a modifier, we need to push all the modifiers into tokenModifiers
+              // passed to final push that we push token, saving them
+              // tokenModifiers is a string[]
+            }
 
-        //     tokenModifiers.push();
-        //   });
-        //   tokenModifiers = m;
-        // }
+            tokenModifiers.push();
+          });
+          tokenModifiers = m;
+        }
 
         switch (tokenType) {
           case "QUOTE":
