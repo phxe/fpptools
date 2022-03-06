@@ -46,7 +46,7 @@
     "semanticTokenTypes": [
       {
         "id": "annotation",
-        "superType": "comment",
+        "superType": "decorator",
         "description": "FPP pre- and post- annotation."
       }
     ],

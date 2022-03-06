@@ -7,7 +7,6 @@ const tokenModifiers = new Map<string, number>();
 
 export const legend = (function () {
   const tokenTypesLegend = [
-    // Custom
     "annotation",
     // Standard (comment unused)
     "namespace", // For identifiers that declare or reference a namespace, module, or package.
@@ -18,20 +17,20 @@ export const legend = (function () {
     "typeParameter", // For identifiers that declare or reference a type parameter.
     "type", // For identifiers that declare or reference a type that is not covered above.
     "parameter", // For identifiers that declare or reference a function or method parameters.
-    "variable", // For identifiers that declare or reference a local or global variable.
+    // "variable", // For identifiers that declare or reference a local or global variable.
     "property", // For identifiers that declare or reference a member property, member field, or member variable.
     "enumMember", // For identifiers that declare or reference an enumeration property, constant, or member.
-    "decorator", // For identifiers that declare or reference decorators and annotations.
+    // "decorator", // For identifiers that declare or reference decorators and annotations.
     "event", // For identifiers that declare an event property.
-    "function", // For identifiers that declare a function.
-    "method", // For identifiers that declare a member function or method.
-    "macro", // For identifiers that declare a macro.
-    "label", // For identifiers that declare a label.
+    // "function", // For identifiers that declare a function.
+    // "method", // For identifiers that declare a member function or method.
+    // "macro", // For identifiers that declare a macro.
+    // "label", // For identifiers that declare a label.
     "comment", // For tokens that represent a comment.
     "string", // For tokens that represent a string literal.
     "keyword", // For tokens that represent a language keyword.
     "number", // For tokens that represent a number literal.
-    "regexp", // For tokens that represent a regular expression literal.
+    // "regexp", // For tokens that represent a regular expression literal.
     "operator", // For tokens that represent an operator.
   ];
   tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
@@ -120,6 +119,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     const t: IParsedToken[] = [];
     const m: string[] = [""];
     const lines = text.split(/\r\n|\r|\n/);
+    // let isContinuation = false;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       let currentIndex = 0;
@@ -144,9 +144,11 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             default:
               break;
           }
+          if (lines[i].substring(closeIndex, closeIndex + 3) === Enum.Symbols.TRIPLEQUOTE) {
+            closeIndex += 2;
+          }
           closeIndex++;
         }
-        currentIndex = closeIndex;
 
         let tokenType = this._parseTextToken(line.substring(openIndex, closeIndex));
 
@@ -175,11 +177,29 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
           tokenModifiers = m;
         }
 
+        currentIndex = closeIndex;
+
+        // Special token handling
         switch (tokenType) {
-          case "QUOTE":
+          case Enum.Symbols.BSLASH:
+            //
+            tokenType = "operator";
+            break;
+          case Enum.Symbols.QUOTE:
+            while (
+              (lines[i][closeIndex] !== '"' && closeIndex < lines[i].length) ||
+              (lines[i][closeIndex] === '"' &&
+                lines[i][closeIndex - 1] === "\\" &&
+                closeIndex < lines[i].length)
+            ) {
+              closeIndex++;
+            }
+            closeIndex++;
+            currentIndex = closeIndex;
             tokenType = "string";
             break;
-          case "TRIPLEQUOTE":
+          case Enum.Symbols.TRIPLEQUOTE:
+            //
             tokenType = "string";
             break;
           // Tokenize remaining line for comments and annotations
@@ -211,10 +231,12 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
   private _parseTextToken(text: string): string {
     /* eslint-disable curly */
     switch (text) {
+      case Enum.Symbols.BSLASH:
+        return Enum.Symbols.BSLASH;
       case Enum.Symbols.TRIPLEQUOTE:
-        return "TRIPLEQUOTE";
+        return Enum.Symbols.TRIPLEQUOTE;
       case Enum.Symbols.QUOTE:
-        return "QUOTE";
+        return Enum.Symbols.QUOTE;
       case Enum.Symbols.COMMENT:
         return "comment";
       case Enum.Symbols.PREANNOTATION:
@@ -234,14 +256,14 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     if (str[0] === "$" && str[1] !== "$")
       return this._isIdentifier(str.substring(1, str.length - 2));
     if (!(this._isAlpha(str[0]) || str[0] === "_")) return false;
-    for (var i = 0; i < str.length; i++) {
+    for (var i = 0; i < str?.length; i++) {
       if (!(this._isAlpha(str[i]) || this._isInteger(str[i]) || str[i] === "_")) return false;
     }
     return true;
   }
 
   private _isAlpha(str: string): boolean {
-    for (var i = 0; i < str.length; i++) {
+    for (var i = 0; i < str?.length; i++) {
       if (str[i].toLowerCase() < "a" || str[i].toLowerCase() > "z") return false;
     }
     return true;
@@ -249,13 +271,13 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
 
   private _isNumber(str: string): boolean {
     if (str[0] === "-" && str[1] !== "-") return this._isNumber(str.substring(1, str.length));
-    if (str[0] + str[1].toLowerCase() === "0x") return this._isHex(str.substring(2, str.length));
+    if (str[0] + str[1]?.toLowerCase() === "0x") return this._isHex(str.substring(2, str.length));
     if (str.includes(".")) return this._isFloat(str);
     return this._isInteger(str);
   }
 
   private _isHex(str: string): boolean {
-    for (var i = 0; i < str.length; i++) {
+    for (var i = 0; i < str?.length; i++) {
       if (!((str[i].toLowerCase() > "a" && str[i].toLowerCase() < "f") || this._isInteger(str[i])))
         return false;
     }
@@ -270,7 +292,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
   }
 
   private _isInteger(str: string): boolean {
-    for (var i = 0; i < str.length; i++) {
+    for (var i = 0; i < str?.length; i++) {
       if (str[i] < "0" || str[i] > "9") return false;
     }
     return true;

@@ -20,7 +20,7 @@ enum AnEnum {
 AnEnum.ENUM_MEMBER
 NotAnEnum.ENUM_MEMBER
 
-# Symbols:
+# Operators:
 )
 ]
 }
@@ -37,6 +37,9 @@ NotAnEnum.ENUM_MEMBER
 =
 [
 {
+
+# Symbols:
+\
 #
 @
 @<
