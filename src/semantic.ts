@@ -166,12 +166,11 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
               tokenType = Enum.Types[str as keyof typeof Enum.Types];
             }
             if (Object.keys(Enum.Keywords)) {
+              tokenModifiers.push();
               // if something is a modifier, we need to push all the modifiers into tokenModifiers
               // passed to final push that we push token, saving them
               // tokenModifiers is a string[]
             }
-
-            tokenModifiers.push();
           });
           tokenModifiers = m;
         }
