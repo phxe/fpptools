@@ -119,8 +119,9 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     const t: IParsedToken[] = [];
     const m: string[] = [""];
     const lines = text.split(/\r\n|\r|\n/);
+    // let isContinuation = false;
     for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
+      const line = lines[i];
       let currentIndex = 0;
 
       // Scan line
@@ -198,43 +199,8 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             tokenType = "string";
             break;
           case Enum.Symbols.TRIPLEQUOTE:
-            // brute force method - feel free to optimize
+            //
             tokenType = "string";
-            t.push({
-              line: i,
-              startCharacter: line.indexOf('"""'),
-              length: line.length - line.indexOf('"""'),
-              tokenType: tokenType,
-              tokenModifiers: tokenModifiers,
-            });
-            // push every line until we find """
-            // """
-            // test """
-            // """ asdfasdf
-            for (let j = i + 1; j < lines.length; j++) {
-              line = lines[j];
-              // find '"""'
-              if ((line.indexOf('"""') === 0 && line.length === 3) || line.indexOf('"""') + 3 === line.length) {
-                openIndex = 0;
-                closeIndex = line.length;
-                i = j;
-                break;
-              } else if (line.indexOf('"""') > 0 && line.indexOf('"""') < line.length + 1) {
-                let subStr = line.substring(0, line.indexOf('"""') + 3);
-                openIndex = 0;
-                closeIndex = subStr.length;
-                i = j;
-                break;
-              } else {
-                t.push({
-                  line: j,
-                  startCharacter: 0,
-                  length: line.length,
-                  tokenType: tokenType,
-                  tokenModifiers: tokenModifiers,
-                });
-              }
-            }
             break;
           // Tokenize remaining line for comments and annotations
           case "comment":
