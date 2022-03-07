@@ -119,8 +119,8 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
   // Add line continuations
   private _parseText(text: string): IParsedToken[] {
     const lines = text.split(/\r\n|\r|\n/);
-    const t: IParsedToken[] = [];
-    let m = [""];
+    const tokens: IParsedToken[] = [];
+    let modifiers = [""];
     // let isContinuation = false;
     let tempCloseIndex = 0;
     let tempOpenIndex = 0;
@@ -166,9 +166,9 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
 
         if (tokenType === Enum.Token.keyword || tokenType === Enum.Token.type) {
           // certain keywords?
-          m.push(line.substring(openIndex, closeIndex));
+          modifiers.push(line.substring(openIndex, closeIndex));
         } else if (tokenType === "IDENTIFIER") {
-          m.forEach((str) => {
+          modifiers.forEach((str) => {
             if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
               tokenType = Enum.Types[str as keyof typeof Enum.Types];
             } else if (Enum.Keywords[str as keyof typeof Enum.Keywords] !== undefined) {
@@ -180,7 +180,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
               tokenType = "UNKNOWN";
             }
           });
-          m = [""];
+          modifiers = [""];
           // tokenModifiers = m;
         }
 
@@ -189,8 +189,33 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
         // Special token handling
         switch (tokenType) {
           case Enum.Symbols.BSLASH:
-            // TODO
+            case Enum.Symbols.BSLASH:
             tokenType = Enum.Token.operator;
+            // TODO
+            // backslash identifies a new line, other wise something needs to be next to the declaration
+            // example: constant a \ 
+            //              = 1 
+            // this is acceptable, without the \ the code should show an error
+            console.log(line);
+            console.log(line.lastIndexOf('\\')); // should present the BSLASH
+            // need to know what is on the next line below BSLASH 
+            // matching the datatype to its appropriate value if on separate lines 
+          
+            // if there isn't a BSLASH check to see if the current line is properly finished off
+            // this being with a variable declaration, or some statement
+            // ENSURE that the BSLASH is applicable to the statement/whatever
+            console.log(line[line.indexOf('\\')]); // this will identify the BSLASH index on every line
+
+            if (line.lastIndexOf('\\')) {
+              tokens.push({
+                line: i,
+                startCharacter: line.indexOf('\\'),
+                length: line.length - line.indexOf('\\'),
+                tokenType: tokenType,
+                tokenModifiers: tokenModifiers,
+              });
+            }
+            
             break;
           case Enum.Symbols.QUOTE:
             while (
@@ -211,7 +236,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             tokenType = "string";
 
             if (line.indexOf('"""') === line.lastIndexOf('"""')) {
-              t.push({
+              tokens.push({
                 line: i,
                 startCharacter: line.indexOf('"""'),
                 length: line.length - line.indexOf('"""'),
@@ -250,7 +275,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
                 i = j;
                 break;
               } else {
-                t.push({
+                tokens.push({
                   line: j,
                   startCharacter: 0,
                   length: line.length,
@@ -263,7 +288,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
           // Tokenize remaining line for comments and annotations
           case Enum.Token.comment:
           case Enum.Token.annotation:
-            t.push({
+            tokens.push({
               line: i,
               startCharacter: closeIndex,
               length: line.length - closeIndex,
@@ -273,7 +298,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             currentIndex = line.length;
             break;
         }
-        t.push({
+        tokens.push({
           line: i,
           startCharacter: openIndex,
           length: closeIndex - openIndex,
@@ -282,7 +307,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
         });
       }
     }
-    return t;
+    return tokens;
   }
 
   private _parseTextToken(text: string): string {
