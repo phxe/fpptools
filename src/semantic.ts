@@ -1,4 +1,3 @@
-import { close, open } from "fs";
 import * as vscode from "vscode";
 import * as Enum from "./enums";
 
@@ -123,31 +122,39 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     const t: IParsedToken[] = [];
     let m = [""];
     // let isContinuation = false;
+    let tempCloseIndex = 0;
+    let tempOpenIndex = 0;
+    let isContinuation = 0;
+    let currentIndex = 0;
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      let currentIndex = 0;
+      currentIndex = 0;
+      let line = lines[i];
 
       // Scan line
-      while (currentIndex < lines[i].length) {
-        if (lines[i][currentIndex] === " ") {
+      while (currentIndex < line.length) {
+        if (isContinuation === 1) {
+          currentIndex = 0;
+          isContinuation = 0;
+        }
+        if (line[currentIndex] === " ") {
           currentIndex++;
           continue;
         }
 
         // Scan token
         let openIndex = currentIndex;
-        let closeIndex = this._getCloseIndex(lines[i], currentIndex);
+        let closeIndex = this._getCloseIndex(line, currentIndex);
 
         // Handle multi-character operators/symbols
         if (closeIndex === openIndex) {
-          switch (lines[i][closeIndex] + lines[i][closeIndex + 1]) {
+          switch (line[closeIndex] + line[closeIndex + 1]) {
             case Enum.Symbols.POSTANNOTATION:
             case Enum.Operators.RARROW:
               closeIndex++;
             default:
               break;
           }
-          if (lines[i].substring(closeIndex, closeIndex + 3) === Enum.Symbols.TRIPLEQUOTE) {
+          if (line.substring(closeIndex, closeIndex + 3) === Enum.Symbols.TRIPLEQUOTE) {
             closeIndex += 2;
           }
           closeIndex++;
@@ -187,10 +194,10 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             break;
           case Enum.Symbols.QUOTE:
             while (
-              (lines[i][closeIndex] !== '"' && closeIndex < lines[i].length) ||
-              (lines[i][closeIndex] === '"' &&
-                lines[i][closeIndex - 1] === "\\" &&
-                closeIndex < lines[i].length)
+              (line[closeIndex] !== '"' && closeIndex < line.length) ||
+              (line[closeIndex] === '"' &&
+                line[closeIndex - 1] === "\\" &&
+                closeIndex < line.length)
             ) {
               closeIndex++;
             }
@@ -199,8 +206,59 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             tokenType = Enum.Token.string;
             break;
           case Enum.Symbols.TRIPLEQUOTE:
-            // TODO
-            tokenType = Enum.Token.string;
+            // brute force method - feel free to optimize
+            let str;
+            tokenType = "string";
+
+            if (line.indexOf('"""') === line.lastIndexOf('"""')) {
+              t.push({
+                line: i,
+                startCharacter: line.indexOf('"""'),
+                length: line.length - line.indexOf('"""'),
+                tokenType: tokenType,
+                tokenModifiers: tokenModifiers,
+              });
+            } else {
+              str = line.substring(
+                line.indexOf('"""'),
+                line.indexOf('"""', line.indexOf('"""') + 3) + 3
+              );
+              tempOpenIndex += openIndex = line.indexOf('"""');
+              tempCloseIndex += closeIndex = str.length + line.indexOf('"""');
+              if (closeIndex !== line.length) {
+                isContinuation = 1;
+                openIndex = tempOpenIndex;
+                closeIndex = tempCloseIndex;
+                line = line.substring(line.indexOf('"""', line.indexOf('"""') + 3) + 3);
+              } else {
+                currentIndex = closeIndex;
+                closeIndex = tempCloseIndex;
+                openIndex = closeIndex - str.length;
+              }
+              if (closeIndex - openIndex !== str.length) {
+                openIndex = closeIndex - str.length;
+              }
+              break;
+            }
+
+            for (let j = i + 1; j < lines.length; j++) {
+              line = lines[j];
+              if (line.indexOf('"""') > 0) {
+                openIndex = 0;
+                closeIndex = line.indexOf('"""') + 3;
+                currentIndex = closeIndex;
+                i = j;
+                break;
+              } else {
+                t.push({
+                  line: j,
+                  startCharacter: 0,
+                  length: line.length,
+                  tokenType: tokenType,
+                  tokenModifiers: tokenModifiers,
+                });
+              }
+            }
             break;
           // Tokenize remaining line for comments and annotations
           case Enum.Token.comment:
@@ -208,14 +266,13 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             t.push({
               line: i,
               startCharacter: closeIndex,
-              length: lines[i].length - closeIndex,
+              length: line.length - closeIndex,
               tokenType: tokenType,
               tokenModifiers: [],
             });
-            currentIndex = lines[i].length;
+            currentIndex = line.length;
             break;
         }
-
         t.push({
           line: i,
           startCharacter: openIndex,
