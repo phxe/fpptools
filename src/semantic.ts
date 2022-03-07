@@ -7,47 +7,50 @@ const tokenModifiers = new Map<string, number>();
 
 export const legend = (function () {
   const tokenTypesLegend = [
-    "annotation",
+    Enum.Token.annotation,
+    Enum.Token.component,
+    Enum.Token.instance,
     // Standard (comment unused)
-    "namespace", // For identifiers that declare or reference a namespace, module, or package.
-    // "class", // For identifiers that declare or reference a class type.
-    "enum", // For identifiers that declare or reference an enumeration type.
-    "interface", // For identifiers that declare or reference an interface type.
-    "struct", // For identifiers that declare or reference a struct type.
-    "typeParameter", // For identifiers that declare or reference a type parameter.
-    "type", // For identifiers that declare or reference a type that is not covered above.
-    "parameter", // For identifiers that declare or reference a function or method parameters.
-    // "variable", // For identifiers that declare or reference a local or global variable.
-    "property", // For identifiers that declare or reference a member property, member field, or member variable.
-    "enumMember", // For identifiers that declare or reference an enumeration property, constant, or member.
-    // "decorator", // For identifiers that declare or reference decorators and annotations.
-    "event", // For identifiers that declare an event property.
-    // "function", // For identifiers that declare a function.
-    // "method", // For identifiers that declare a member function or method.
-    // "macro", // For identifiers that declare a macro.
-    // "label", // For identifiers that declare a label.
-    "comment", // For tokens that represent a comment.
-    "string", // For tokens that represent a string literal.
-    "keyword", // For tokens that represent a language keyword.
-    "number", // For tokens that represent a number literal.
-    // "regexp", // For tokens that represent a regular expression literal.
-    "operator", // For tokens that represent an operator.
+    Enum.Token.namespace, // For identifiers that declare or reference a namespace, module, or package.
+    Enum.Token.class, // For identifiers that declare or reference a class type.
+    Enum.Token.enum, // For identifiers that declare or reference an enumeration type.
+    Enum.Token.interface, // For identifiers that declare or reference an interface type.
+    Enum.Token.struct, // For identifiers that declare or reference a struct type.
+    Enum.Token.typeParameter, // For identifiers that declare or reference a type parameter.
+    Enum.Token.type, // For identifiers that declare or reference a type that is not covered above.
+    Enum.Token.parameter, // For identifiers that declare or reference a function or method parameters.
+    Enum.Token.variable, // For identifiers that declare or reference a local or global variable.
+    Enum.Token.property, // For identifiers that declare or reference a member property, member field, or member variable.
+    Enum.Token.enumMember, // For identifiers that declare or reference an enumeration property, constant, or member.
+    Enum.Token.decorator, // For identifiers that declare or reference decorators and annotations.
+    Enum.Token.event, // For identifiers that declare an event property.
+    Enum.Token.function, // For identifiers that declare a function.
+    Enum.Token.method, // For identifiers that declare a member function or method.
+    Enum.Token.macro, // For identifiers that declare a macro.
+    Enum.Token.label, // For identifiers that declare a label.
+    Enum.Token.comment, // For tokens that represent a comment.
+    Enum.Token.string, // For tokens that represent a string literal.
+    Enum.Token.keyword, // For tokens that represent a language keyword.
+    Enum.Token.number, // For tokens that represent a number literal.
+    Enum.Token.regexp, // For tokens that represent a regular expression literal.
+    Enum.Token.operator, // For tokens that represent an operator.
   ];
   tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
 
   const tokenModifiersLegend = [
     // Custom
+    Enum.Token.component_kind,
     // Standard (comment unused)
-    "declaration", // For declarations of symbols.
-    "definition", // For definitions of symbols, for example, in header files.
-    "readonly", // For readonly variables and member fields (constants).
-    "static", // For class members (static members).
-    "deprecated", // For symbols that should no longer be used.
-    "abstract", // For types and member functions that are abstract.
-    "async", // For functions that are marked async.
-    "modification", // For variable references where the variable is assigned to.
-    "documentation", // For occurrences of symbols in documentation.
-    "defaultLibrary", // For symbols that are part of the standard library.
+    Enum.Token.declaration, // For declarations of symbols.
+    Enum.Token.definition, // For definitions of symbols, for example, in header files.
+    Enum.Token.readonly, // For readonly variables and member fields (constants).
+    Enum.Token.static, // For class members (static members).
+    Enum.Token.deprecated, // For symbols that should no longer be used.
+    Enum.Token.abstract, // For types and member functions that are abstract.
+    Enum.Token.async, // For functions that are marked async.
+    Enum.Token.modification, // For variable references where the variable is assigned to.
+    Enum.Token.documentation, // For occurrences of symbols in documentation.
+    Enum.Token.defaultLibrary, // For symbols that are part of the standard library.
   ];
   tokenModifiersLegend.forEach((tokenModifier, index) => tokenModifiers.set(tokenModifier, index));
 
@@ -64,8 +67,8 @@ interface IParsedToken {
 
 export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
   async provideDocumentSemanticTokens(
-    document: vscode.TextDocument,
-    token: vscode.CancellationToken
+    document: vscode.TextDocument
+    // token: vscode.CancellationToken
   ): Promise<vscode.SemanticTokens> {
     const allTokens = this._parseText(document.getText());
     const builder = new vscode.SemanticTokensBuilder();
@@ -116,9 +119,9 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
 
   // Add line continuations
   private _parseText(text: string): IParsedToken[] {
-    const t: IParsedToken[] = [];
-    const m: string[] = [""];
     const lines = text.split(/\r\n|\r|\n/);
+    const t: IParsedToken[] = [];
+    let m = [""];
     // let isContinuation = false;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -154,27 +157,24 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
 
         let tokenModifiers = [""];
 
-        if (tokenType === "keyword" || tokenType === "type") {
+        if (tokenType === Enum.Token.keyword || tokenType === Enum.Token.type) {
           // certain keywords?
           m.push(line.substring(openIndex, closeIndex));
-          // focus on individual strings "module" and what comes after
-          // then storing the data into tokenModifiers 
-        } else if (tokenType === "identifier") {
+        } else if (tokenType === "IDENTIFIER") {
           m.forEach((str) => {
-            // for all things pushed on stack
-            if (Enum.Keywords[str as keyof typeof Enum.Keywords] !== undefined) {
-              tokenType = Enum.Keywords[str as keyof typeof Enum.Keywords];
-            } else if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
+            if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
               tokenType = Enum.Types[str as keyof typeof Enum.Types];
-            }
-            if (Object.keys(Enum.Keywords)) {
-              tokenModifiers.push();
-              // if something is a modifier, we need to push all the modifiers into tokenModifiers
-              // passed to final push that we push token, saving them
-              // tokenModifiers is a string[]
+            } else if (Enum.Keywords[str as keyof typeof Enum.Keywords] !== undefined) {
+              tokenType = Enum.Keywords[str as keyof typeof Enum.Keywords];
+              // if (Object.keys(Enum.Keywords)) {
+              //   tokenModifiers.push();
+            } else {
+              currentIndex = closeIndex;
+              tokenType = "UNKNOWN";
             }
           });
-          tokenModifiers = m;
+          m = [""];
+          // tokenModifiers = m;
         }
 
         currentIndex = closeIndex;
@@ -182,8 +182,8 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
         // Special token handling
         switch (tokenType) {
           case Enum.Symbols.BSLASH:
-            //
-            tokenType = "operator";
+            // TODO
+            tokenType = Enum.Token.operator;
             break;
           case Enum.Symbols.QUOTE:
             while (
@@ -196,15 +196,15 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             }
             closeIndex++;
             currentIndex = closeIndex;
-            tokenType = "string";
+            tokenType = Enum.Token.string;
             break;
           case Enum.Symbols.TRIPLEQUOTE:
-            //
-            tokenType = "string";
+            // TODO
+            tokenType = Enum.Token.string;
             break;
           // Tokenize remaining line for comments and annotations
-          case "comment":
-          case "annotation":
+          case Enum.Token.comment:
+          case Enum.Token.annotation:
             t.push({
               line: i,
               startCharacter: closeIndex,
@@ -238,18 +238,18 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
       case Enum.Symbols.QUOTE:
         return Enum.Symbols.QUOTE;
       case Enum.Symbols.COMMENT:
-        return "comment";
+        return Enum.Token.comment;
       case Enum.Symbols.PREANNOTATION:
-        return "annotation";
+        return Enum.Token.annotation;
       case Enum.Symbols.POSTANNOTATION:
-        return "annotation";
+        return Enum.Token.annotation;
     }
-    if (this._isEnumMember(text, Enum.Types)) return "type";
-    if (this._isEnumMember(text, Enum.Keywords)) return "keyword";
-    if (this._isEnumValue(text, Enum.Operators)) return "operator";
-    if (this._isNumber(text)) return "number";
-    if (this._isIdentifier(text)) return "identifier";
-    return "";
+    if (this._isEnumMember(text, Enum.Types)) return Enum.Token.type;
+    if (this._isEnumMember(text, Enum.Keywords)) return Enum.Token.keyword;
+    if (this._isEnumValue(text, Enum.Operators)) return Enum.Token.operator;
+    if (this._isNumber(text)) return Enum.Token.number;
+    if (this._isIdentifier(text)) return "IDENTIFIER";
+    return "UNKNOWN";
   }
 
   private _isIdentifier(str: string): boolean {

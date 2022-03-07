@@ -48,12 +48,27 @@
         "id": "annotation",
         "superType": "decorator",
         "description": "FPP pre- and post- annotation."
+      },
+      {
+        "id": "instance",
+        "superType": "struct",
+        "description": "FPP component instance."
+      },
+      {
+        "id": "port",
+        "superType": "method",
+        "description": "FPP endpoint of a connection between components."
+      },
+      {
+        "id": "component",
+        "superType": "class",
+        "description": "FPP unit of function."
       }
     ],
     "semanticTokenModifiers": [
       {
-        "id": "example",
-        "description": "example"
+        "id": "component-kind",
+        "description": "FPP component modifier."
       }
     ]
   },
