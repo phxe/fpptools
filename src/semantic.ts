@@ -179,6 +179,9 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
               // if something is a modifier, we need to push all the modifiers into tokenModifiers
               // passed to final push that we push token, saving them
               // tokenModifiers is a string[]
+
+              // if it exists in enum its a modifier, therefore we push onto tokenModifiers
+              // pushing the actual tokenType 
             }
           });
           tokenModifiers = m;
