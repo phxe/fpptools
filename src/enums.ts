@@ -24,7 +24,7 @@ export enum Symbols {
   PREANNOTATION = "@",
   POSTANNOTATION = "@<",
   QUOTE = '"',
-  TRIPLEQUOTE = '"""',
+  TQUOTE = '"""',
 }
 
 export enum Token {

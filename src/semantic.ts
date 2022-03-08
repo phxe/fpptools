@@ -119,26 +119,27 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     const lines = text.split(/\r\n|\r|\n/);
     const tokens: ParsedToken[] = [];
     let modifiers = [""];
-    let isContinuation = 0;
-    let currentIndex = 0;
+    let index = 0;
+    // let isContinuation = 0;
+
     for (let i = 0; i < lines.length; i++) {
-      currentIndex = 0;
+      index = 0;
       let line = lines[i];
 
       // Scan line
-      while (currentIndex < line.length) {
-        if (isContinuation === 1) {
-          currentIndex = 0;
-          isContinuation = 0;
-        }
-        if (line[currentIndex] === " ") {
-          currentIndex++;
+      while (index < line.length) {
+        // if (isContinuation === 1) {
+        //   index = 0;
+        //   isContinuation = 0;
+        // }
+        if (line[index] === " ") {
+          index++;
           continue;
         }
 
         // Scan token
-        let openIndex = currentIndex;
-        let closeIndex = this._getCloseIndex(line, currentIndex);
+        let openIndex = index;
+        let closeIndex = this._getCloseIndex(line, index);
 
         // Handle multi-character operators/symbols
         if (closeIndex === openIndex) {
@@ -149,7 +150,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             default:
               break;
           }
-          if (line.substring(closeIndex, closeIndex + 3) === Enum.Symbols.TRIPLEQUOTE) {
+          if (line.substring(closeIndex, closeIndex + 3) === Enum.Symbols.TQUOTE) {
             closeIndex += 2;
           }
           closeIndex++;
@@ -184,7 +185,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
           // tokenModifiers = m;
         }
 
-        currentIndex = closeIndex;
+        index = closeIndex;
 
         // Special token handling
         switch (tokenType) {
@@ -218,6 +219,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
 
             break;
           case Enum.Symbols.QUOTE:
+            // if (line.substring(closeIndex, closeIndex + 3) !== Enum.Symbols.TQUOTE) {
             while (
               (line[closeIndex] !== '"' && closeIndex < line.length) ||
               (line[closeIndex] === '"' &&
@@ -227,67 +229,69 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
               closeIndex++;
             }
             closeIndex++;
-            currentIndex = closeIndex;
+            index = closeIndex;
             tokenType = Enum.Token.string;
             break;
-          case Enum.Symbols.TRIPLEQUOTE:
-            // brute force method - feel free to optimize
-            let str;
-            let tempCloseIndex = 0;
-            let tempOpenIndex = 0;
+          // }
+          case Enum.Symbols.TQUOTE:
             tokenType = "string";
 
-            if (line.indexOf('"""') === line.lastIndexOf('"""')) {
-              tokens.push({
-                line: i,
-                startCharacter: line.indexOf('"""'),
-                length: line.length - line.indexOf('"""'),
-                tokenType: tokenType,
-                // text: textToken,
-                tokenModifiers: tokenModifiers,
-              });
-            } else {
-              str = line.substring(
-                line.indexOf('"""'),
-                line.indexOf('"""', line.indexOf('"""') + 3) + 3
-              );
-              tempOpenIndex += openIndex = line.indexOf('"""');
-              tempCloseIndex += closeIndex = str.length + line.indexOf('"""');
-              if (closeIndex !== line.length) {
-                isContinuation = 1;
-                openIndex = tempOpenIndex;
-                closeIndex = tempCloseIndex;
-                line = line.substring(line.indexOf('"""', line.indexOf('"""') + 3) + 3);
-              } else {
-                currentIndex = closeIndex;
-                closeIndex = tempCloseIndex;
-                openIndex = closeIndex - str.length;
-              }
-              if (closeIndex - openIndex !== str.length) {
-                openIndex = closeIndex - str.length;
-              }
-              break;
-            }
+            // brute force method - feel free to optimize
 
-            for (let j = i + 1; j < lines.length; j++) {
-              line = lines[j];
-              if (line.indexOf('"""') > 0) {
-                openIndex = 0;
-                closeIndex = line.indexOf('"""') + 3;
-                currentIndex = closeIndex;
-                i = j;
-                break;
-              } else {
-                tokens.push({
-                  line: j,
-                  startCharacter: 0,
-                  length: line.length,
-                  tokenType: tokenType,
-                  // text: textToken,
-                  tokenModifiers: tokenModifiers,
-                });
-              }
-            }
+            // let str;
+            // let tempCloseIndex = 0;
+            // let tempOpenIndex = 0;
+
+            // if (line.indexOf('"""') === line.lastIndexOf('"""')) {
+            //   tokens.push({
+            //     line: i,
+            //     startCharacter: line.indexOf('"""'),
+            //     length: line.length - line.indexOf('"""'),
+            //     tokenType: tokenType,
+            //     // text: textToken,
+            //     tokenModifiers: tokenModifiers,
+            //   });
+            // } else {
+            //   str = line.substring(
+            //     line.indexOf('"""'),
+            //     line.indexOf('"""', line.indexOf('"""') + 3) + 3
+            //   );
+            //   tempOpenIndex += openIndex = line.indexOf('"""');
+            //   tempCloseIndex += closeIndex = str.length + line.indexOf('"""');
+            //   if (closeIndex !== line.length) {
+            //     isContinuation = 1;
+            //     openIndex = tempOpenIndex;
+            //     closeIndex = tempCloseIndex;
+            //     line = line.substring(line.indexOf('"""', line.indexOf('"""') + 3) + 3);
+            //   } else {
+            //     index = closeIndex;
+            //     closeIndex = tempCloseIndex;
+            //     openIndex = closeIndex - str.length;
+            //   }
+            //   if (closeIndex - openIndex !== str.length) {
+            //     openIndex = closeIndex - str.length;
+            //   }
+            //   break;
+            // }
+            // for (let j = i + 1; j < lines.length; j++) {
+            //   line = lines[j];
+            //   if (line.indexOf('"""') > 0) {
+            //     openIndex = 0;
+            //     closeIndex = line.indexOf('"""') + 3;
+            //     index = closeIndex;
+            //     i = j;
+            //     break;
+            //   } else {
+            //     tokens.push({
+            //       line: j,
+            //       startCharacter: 0,
+            //       length: line.length,
+            //       tokenType: tokenType,
+            //       // text: textToken,
+            //       tokenModifiers: tokenModifiers,
+            //     });
+            //   }
+            // }
             break;
           // Tokenize remaining line for comments and annotations
           case Enum.Token.comment:
@@ -300,7 +304,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
               // text: textToken,
               tokenModifiers: [],
             });
-            currentIndex = line.length;
+            index = line.length;
             break;
         }
 
@@ -324,8 +328,8 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     switch (text) {
       case Enum.Symbols.BSLASH:
         return Enum.Symbols.BSLASH;
-      case Enum.Symbols.TRIPLEQUOTE:
-        return Enum.Symbols.TRIPLEQUOTE;
+      case Enum.Symbols.TQUOTE:
+        return Enum.Symbols.TQUOTE;
       case Enum.Symbols.QUOTE:
         return Enum.Symbols.QUOTE;
       case Enum.Symbols.COMMENT:
