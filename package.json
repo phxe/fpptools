@@ -30,6 +30,11 @@
 		  "command": "fpptools.filenames",
 		  "title": "Write File Names",
 		  "category": "F'' Tools"
+	  },
+	  {
+		  "command": "fpptools.syntax",
+		  "title": "FPP to AST",
+		  "category": "F`` Tools"
 	  }
     ],
     "languages": [

@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
   //    output: If the check succeeds, then no standard output; otherwise an error message.
   vscode.commands.registerCommand("fpptools.check", () => {
     vscode.window.showInformationMessage(
-      "F`` Tools: Check Semantics Tool Test..."
+      "F`` Tools: Check Semantics Tool Test..." //test message
     );
 
     // users will be able to select multiple files. Only .FPP files will appear.
@@ -88,6 +88,35 @@ export function activate(context: vscode.ExtensionContext) {
     //    2. walk AST and identify defs that cause XML or C++ files to be generated
     //    3. write out names of generated files (one per line)
     
+  });
+
+  // fpp tools commands test: fpp syntax
+  //    this command will parse FPP source files into an abstract syntax tree (AST) using the fpp-syntax tool
+  //    input: a file or list of files
+  //    output: If the parse succeeds, then no standard output; otherwise an error message.
+  //    extras: Optional text representation of the AST
+  vscode.commands.registerCommand("fpptools.syntax", () => {
+    vscode.window.showInformationMessage("F`` Tools: Parse FPP to AST");  //debug message
+    
+    var options: vscode.OpenDialogOptions = {
+      canSelectMany: true,
+      filters: {
+        'FPP Files': ['fpp']
+      }
+    }
+
+    vscode.window.showOpenDialog(options).then(files => {
+      if (files){
+        for (var uri of files) {
+          vscode.window.showInformationMessage(
+            "Selected File: " + uri.fsPath
+          )
+        }
+      }
+    })
+
+
+
   });
 
   // context.subscriptions.push(
