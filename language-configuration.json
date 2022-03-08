@@ -66,5 +66,23 @@
       "end": "^\\s*<\\s*ENDREGION\\b\\s*>"
     }
   },
-    "wordPattern": "([^\\s\\{\\}\\[\\]\\(\\)\\/\\\\\\#\\@\\*\\+\\-\\=\\;\\:\\'\\&\\~\\!\\%\"\\,\\.\\<\\>\\?\\|\\`\\^]+)|(-?\\d*.\\d*)"
-  }
+
+  "wordPattern": "([^\\s\\{\\}\\[\\]\\(\\)\\/\\\\\\#\\@\\*\\+\\-\\=\\;\\:\\'\\&\\~\\!\\%\"\\,\\.\\<\\>\\?\\|\\`\\^]+)|(-?\\d*.\\d*)",
+
+  //Rules on enter key press
+  "onEnterRules": [
+      { 
+        "beforeText": "^\\s*(?:lparen).*?:\\s*$",
+        "action": { "indent": "indent"}
+      },
+      {
+        "beforeText": "^\\s*(?:lbracket).*?:\\s*$",
+        "action": { "indent": "indent"}
+      },
+      {
+        "beforeText": "^\\s*(?:lbrace).*?:\\s*$",
+        "action": { "indent": "indent"}
+      }
+      //ENTER MODIFIER LATER
+    ]
+}
