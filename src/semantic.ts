@@ -3,6 +3,7 @@ import * as Enum from "./enums";
 
 const tokenTypes = new Map<string, number>();
 const tokenModifiers = new Map<string, number>();
+const identifiers = new Map<string, Enum.Token>();
 
 export const legend = (function () {
   const tokenTypesLegend = [
@@ -56,18 +57,19 @@ export const legend = (function () {
   return new vscode.SemanticTokensLegend(tokenTypesLegend, tokenModifiersLegend);
 })();
 
-interface IParsedToken {
+interface ParsedToken {
   line: number;
   startCharacter: number;
   length: number;
   tokenType: string;
+  // text: string;
   tokenModifiers: string[];
 }
 
 export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
   async provideDocumentSemanticTokens(
-    document: vscode.TextDocument
-    // token: vscode.CancellationToken
+    document: vscode.TextDocument,
+    token: vscode.CancellationToken
   ): Promise<vscode.SemanticTokens> {
     const allTokens = this._parseText(document.getText());
     const builder = new vscode.SemanticTokensBuilder();
@@ -86,8 +88,6 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
   private _encodeTokenType(tokenType: string): number {
     if (tokenTypes.has(tokenType)) {
       return tokenTypes.get(tokenType)!;
-    } else if (tokenType === "notInLegend") {
-      return tokenTypes.size + 2;
     }
     return 0;
   }
@@ -98,8 +98,6 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
       const tokenModifier = strTokenModifiers[i];
       if (tokenModifiers.has(tokenModifier)) {
         result = result | (1 << tokenModifiers.get(tokenModifier)!);
-      } else if (tokenModifier === "notInLegend") {
-        result = result | (1 << (tokenModifiers.size + 2));
       }
     }
     return result;
@@ -117,13 +115,10 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
   }
 
   // Add line continuations
-  private _parseText(text: string): IParsedToken[] {
+  private _parseText(text: string): ParsedToken[] {
     const lines = text.split(/\r\n|\r|\n/);
-    const tokens: IParsedToken[] = [];
+    const tokens: ParsedToken[] = [];
     let modifiers = [""];
-    // let isContinuation = false;
-    let tempCloseIndex = 0;
-    let tempOpenIndex = 0;
     let isContinuation = 0;
     let currentIndex = 0;
     for (let i = 0; i < lines.length; i++) {
@@ -160,27 +155,32 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
           closeIndex++;
         }
 
-        let tokenType = this._parseTextToken(line.substring(openIndex, closeIndex));
-
+        let textToken = line.substring(openIndex, closeIndex);
+        let tokenType = this._parseTextToken(textToken);
         let tokenModifiers = [""];
 
         if (tokenType === Enum.Token.keyword || tokenType === Enum.Token.type) {
           // certain keywords?
-          modifiers.push(line.substring(openIndex, closeIndex));
+          modifiers.push(textToken);
         } else if (tokenType === "IDENTIFIER") {
           modifiers.forEach((str) => {
-            if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
-              tokenType = Enum.Types[str as keyof typeof Enum.Types];
-            } else if (Enum.Keywords[str as keyof typeof Enum.Keywords] !== undefined) {
-              tokenType = Enum.Keywords[str as keyof typeof Enum.Keywords];
-              // if (Object.keys(Enum.Keywords)) {
-              //   tokenModifiers.push();
+            if (!identifiers.has(textToken)) {
+              if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
+                tokenType = Enum.Types[str as keyof typeof Enum.Types];
+                tokenModifiers.push(Enum.Token.declaration);
+                identifiers.set(textToken, tokenType as Enum.Token);
+              } else if (Enum.KeywordTokens[str as keyof typeof Enum.KeywordTokens] !== undefined) {
+                tokenType = Enum.KeywordTokens[str as keyof typeof Enum.KeywordTokens];
+                tokenModifiers.push(Enum.Token.declaration);
+                identifiers.set(textToken, tokenType as Enum.Token);
+              } else {
+                tokenType = "UNKNOWN";
+              }
             } else {
-              currentIndex = closeIndex;
-              tokenType = "UNKNOWN";
+              tokenType = identifiers.get(textToken) as string;
             }
           });
-          modifiers = [""];
+          modifiers = tokenModifiers;
           // tokenModifiers = m;
         }
 
@@ -189,33 +189,33 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
         // Special token handling
         switch (tokenType) {
           case Enum.Symbols.BSLASH:
-            case Enum.Symbols.BSLASH:
             tokenType = Enum.Token.operator;
             // TODO
             // backslash identifies a new line, other wise something needs to be next to the declaration
-            // example: constant a \ 
-            //              = 1 
+            // example: constant a \
+            //              = 1
             // this is acceptable, without the \ the code should show an error
             console.log(line);
-            console.log(line.lastIndexOf('\\')); // should present the BSLASH
-            // need to know what is on the next line below BSLASH 
-            // matching the datatype to its appropriate value if on separate lines 
-          
+            console.log(line.lastIndexOf("\\")); // should present the BSLASH
+            // need to know what is on the next line below BSLASH
+            // matching the datatype to its appropriate value if on separate lines
+
             // if there isn't a BSLASH check to see if the current line is properly finished off
             // this being with a variable declaration, or some statement
             // ENSURE that the BSLASH is applicable to the statement/whatever
-            console.log(line[line.indexOf('\\')]); // this will identify the BSLASH index on every line
+            console.log(line[line.indexOf("\\")]); // this will identify the BSLASH index on every line
 
-            if (line.lastIndexOf('\\')) {
+            if (line.lastIndexOf("\\")) {
               tokens.push({
                 line: i,
-                startCharacter: line.indexOf('\\'),
-                length: line.length - line.indexOf('\\'),
+                startCharacter: line.indexOf("\\"),
+                length: line.length - line.indexOf("\\"),
                 tokenType: tokenType,
+                // text: textToken,
                 tokenModifiers: tokenModifiers,
               });
             }
-            
+
             break;
           case Enum.Symbols.QUOTE:
             while (
@@ -233,6 +233,8 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
           case Enum.Symbols.TRIPLEQUOTE:
             // brute force method - feel free to optimize
             let str;
+            let tempCloseIndex = 0;
+            let tempOpenIndex = 0;
             tokenType = "string";
 
             if (line.indexOf('"""') === line.lastIndexOf('"""')) {
@@ -241,6 +243,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
                 startCharacter: line.indexOf('"""'),
                 length: line.length - line.indexOf('"""'),
                 tokenType: tokenType,
+                // text: textToken,
                 tokenModifiers: tokenModifiers,
               });
             } else {
@@ -280,6 +283,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
                   startCharacter: 0,
                   length: line.length,
                   tokenType: tokenType,
+                  // text: textToken,
                   tokenModifiers: tokenModifiers,
                 });
               }
@@ -293,18 +297,23 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
               startCharacter: closeIndex,
               length: line.length - closeIndex,
               tokenType: tokenType,
+              // text: textToken,
               tokenModifiers: [],
             });
             currentIndex = line.length;
             break;
         }
-        tokens.push({
-          line: i,
-          startCharacter: openIndex,
-          length: closeIndex - openIndex,
-          tokenType: tokenType,
-          tokenModifiers: tokenModifiers,
-        });
+
+        if (tokenType !== "UNKNOWN") {
+          tokens.push({
+            line: i,
+            startCharacter: openIndex,
+            length: closeIndex - openIndex,
+            tokenType: tokenType,
+            // text: textToken,
+            tokenModifiers: tokenModifiers,
+          });
+        }
       }
     }
     return tokens;

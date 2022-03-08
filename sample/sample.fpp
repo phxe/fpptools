@@ -67,6 +67,7 @@ enum
 string
 struct
 type
+constant
 
 # Keywords:
 active
@@ -81,7 +82,6 @@ change
 command
 component
 connections
-constant
 cpu
 default
 diagnostic

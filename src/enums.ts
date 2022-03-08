@@ -97,12 +97,24 @@ export enum KeywordModifiers {
   constant = "readonly",
 }
 
-export enum Keywords {
-  // FPP types
+export enum KeywordTokens {
   module = "namespace",
   component = "component",
   instance = "instance",
   port = "port",
+}
+
+export enum Keywords {
+  // Tokens
+  module = "namespace",
+  component = "component",
+  instance = "instance",
+  port = "port",
+  // Modifiers
+  active = "component-kind",
+  passive = "component-kind",
+  queued = "component-kind",
+  constant = "readonly",
   //
   activity = "",
   always = "",
@@ -139,12 +151,10 @@ export enum Keywords {
   orange = "property",
   output = "type",
   param = "",
-  passive = "type",
   phase = "keyword",
   priority = "keyword",
   private = "keyword",
   queue = "keyword",
-  queued = "type",
   recv = "type",
   red = "property",
   ref = "annotation",

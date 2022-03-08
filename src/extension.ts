@@ -10,9 +10,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   //fpptools commands test
   vscode.commands.registerCommand("fpptools.check", () => {
-    vscode.window.showInformationMessage(
-      "F`` Tools: Check Semantics Tool Test..."
-    );
+    vscode.window.showInformationMessage("F`` Tools: Check Semantics Tool Test...");
     // Could either have the user select a file using showOpenDialog,
     // Try forcing '.fpp' files, or select multiple? entire folder?
     vscode.window.showOpenDialog();
@@ -22,7 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.languages.registerDocumentSemanticTokensProvider(
-      { language: "fpp" },
+      { scheme: "file", language: "fpp" },
       new DocumentSemanticTokensProvider(),
       legend
     )
