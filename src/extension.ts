@@ -126,6 +126,54 @@ export function activate(context: vscode.ExtensionContext) {
   //     legend
   //   )
   // );
+  
+
+  // code completion
+  
+  const keywordProvider = vscode.languages.registerCompletionItemProvider('plaintext', 
+  {
+    //keyword code completion
+    provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionList>
+    {
+      //test
+      const testCompletion = new vscode.CompletionItem('test');
+      testCompletion.kind = vscode.CompletionItemKind.Keyword;
+      testCompletion.insertText = 'test';
+      testCompletion.command = {command: 'editor.action.triggerSuggest', title: 'Re-trigger completions...'};
+
+      //test2
+      const test2Completion = new vscode.CompletionItem('test2.');
+      test2Completion.commitCharacters = ['.'];
+      test2Completion.documentation = new vscode.MarkdownString('Press `.` to get `test2.`');
+
+      return 
+      [
+        testCompletion
+      ];
+    }
+  });
+
+  const objectProvider = vscode.languages.registerCompletionItemProvider('plaintext', 
+  {
+    provideCompletionItems(document: vscode.TextDocument, position: vscode.Position): vscode.ProviderResult<vscode.CompletionList>
+    {
+      //test3
+      const test2LinePrefix = document.lineAt(position).text.substr(0, position.character);
+      if(!test2LinePrefix.endsWith(`test2.`))
+      {
+        return undefined;
+      }
+
+      //future implementation of object code completion
+      return
+      [
+        new vscode.CompletionItem('completeTest', vscode.CompletionItemKind.Method)
+      ];
+    }
+  });
+
+  //For de-registering of extension if needed
+  context.subscriptions.push(keywordProvider, objectProvider); 
 }
 
 export function deactivate() {}
