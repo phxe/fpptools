@@ -164,25 +164,26 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
           // certain keywords?
           modifiers.push(textToken);
         } else if (tokenType === "IDENTIFIER") {
-          modifiers.forEach((str) => {
+          tokenType = "UNKNOWN";
+          for (let i = 0; i < modifiers.length; ++i) {
             if (!identifiers.has(textToken)) {
-              if (Enum.Types[str as keyof typeof Enum.Types] !== undefined) {
-                tokenType = Enum.Types[str as keyof typeof Enum.Types];
+              if (Enum.Types[modifiers[i] as keyof typeof Enum.Types] !== undefined) {
+                tokenType = Enum.Types[modifiers[i] as keyof typeof Enum.Types];
                 tokenModifiers.push(Enum.Token.declaration);
                 identifiers.set(textToken, tokenType as Enum.Token);
-              } else if (Enum.KeywordTokens[str as keyof typeof Enum.KeywordTokens] !== undefined) {
-                tokenType = Enum.KeywordTokens[str as keyof typeof Enum.KeywordTokens];
+              } else if (
+                Enum.KeywordTokens[modifiers[i] as keyof typeof Enum.KeywordTokens] !== undefined
+              ) {
+                tokenType = Enum.KeywordTokens[modifiers[i] as keyof typeof Enum.KeywordTokens];
                 tokenModifiers.push(Enum.Token.declaration);
                 identifiers.set(textToken, tokenType as Enum.Token);
-              } else {
-                tokenType = "UNKNOWN";
               }
             } else {
               tokenType = identifiers.get(textToken) as string;
             }
-          });
-          modifiers = tokenModifiers;
-          // tokenModifiers = m;
+          }
+          // tokenModifiers = modifiers;
+          modifiers = [];
         }
 
         index = closeIndex;
@@ -219,7 +220,6 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
 
             break;
           case Enum.Symbols.QUOTE:
-            // if (line.substring(closeIndex, closeIndex + 3) !== Enum.Symbols.TQUOTE) {
             while (
               (line[closeIndex] !== '"' && closeIndex < line.length) ||
               (line[closeIndex] === '"' &&
@@ -232,11 +232,9 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             index = closeIndex;
             tokenType = Enum.Token.string;
             break;
-          // }
           case Enum.Symbols.TQUOTE:
-            tokenType = "string";
+            tokenType = Enum.Token.string;
 
-            // brute force method - feel free to optimize
             if ((closeIndex = line.substring(index).indexOf(Enum.Symbols.TQUOTE)) !== -1) {
               closeIndex += index + 3;
               index = closeIndex;
@@ -346,7 +344,9 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
 
   private _isHex(str: string): boolean {
     for (var i = 0; i < str?.length; i++) {
-      if (!((str[i].toLowerCase() > "a" && str[i].toLowerCase() < "f") || this._isInteger(str[i])))
+      if (
+        !((str[i].toLowerCase() >= "a" && str[i].toLowerCase() <= "f") || this._isInteger(str[i]))
+      )
         return false;
     }
     return true;

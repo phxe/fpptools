@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+
+// FPP Operators
 export enum Operators {
   RPAREN = ")",
   RBRACKET = "]",
@@ -18,6 +20,7 @@ export enum Operators {
   LBRACE = "{",
 }
 
+// FPP Symbols
 export enum Symbols {
   BSLASH = "\\",
   COMMENT = "#",
@@ -27,6 +30,7 @@ export enum Symbols {
   TQUOTE = '"""',
 }
 
+// Semantic Token Types
 export enum Token {
   annotation = "annotation",
   component = "component",
@@ -67,6 +71,7 @@ export enum Token {
   defaultLibrary = "defaultLibrary",
 }
 
+// FPP Types
 export enum Types {
   // Numeric types
   F32 = "variable",
@@ -90,6 +95,7 @@ export enum Types {
   type = "type",
 }
 
+// FPP Keyword to Semantic Token Type
 export enum KeywordModifiers {
   active = "component-kind",
   passive = "component-kind",
@@ -97,6 +103,7 @@ export enum KeywordModifiers {
   constant = "readonly",
 }
 
+// FPP Keyword to Semantic Modifier Token Type
 export enum KeywordTokens {
   module = "namespace",
   component = "component",
@@ -104,6 +111,7 @@ export enum KeywordTokens {
   port = "port",
 }
 
+// FPP Keywords
 export enum Keywords {
   // Tokens
   module = "namespace",
