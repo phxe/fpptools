@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
     var options: vscode.OpenDialogOptions = {
       canSelectMany: true,
       filters: {
-        'FPP Files': ['fpp']
+        'FPP Files': ['fpp', 'fppi']
       }
     }
     // if we have a current workspace folder, we will default to that. Otherwise,
@@ -57,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
       canSelectFiles: true,
       canSelectFolders: false,
       filters: {
-        'FPP': ['fpp']
+        'FPP': ['fpp', 'fppi']
       },
       defaultUri: vscode.Uri.file('C:\\')
     };
@@ -101,7 +101,7 @@ export function activate(context: vscode.ExtensionContext) {
     var options: vscode.OpenDialogOptions = {
       canSelectMany: true,
       filters: {
-        'FPP Files': ['fpp']
+        'FPP Files': ['fpp', 'fppi']
       }
     }
 
