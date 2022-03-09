@@ -237,61 +237,34 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
             tokenType = "string";
 
             // brute force method - feel free to optimize
-
-            // let str;
-            // let tempCloseIndex = 0;
-            // let tempOpenIndex = 0;
-
-            // if (line.indexOf('"""') === line.lastIndexOf('"""')) {
-            //   tokens.push({
-            //     line: i,
-            //     startCharacter: line.indexOf('"""'),
-            //     length: line.length - line.indexOf('"""'),
-            //     tokenType: tokenType,
-            //     // text: textToken,
-            //     tokenModifiers: tokenModifiers,
-            //   });
-            // } else {
-            //   str = line.substring(
-            //     line.indexOf('"""'),
-            //     line.indexOf('"""', line.indexOf('"""') + 3) + 3
-            //   );
-            //   tempOpenIndex += openIndex = line.indexOf('"""');
-            //   tempCloseIndex += closeIndex = str.length + line.indexOf('"""');
-            //   if (closeIndex !== line.length) {
-            //     isContinuation = 1;
-            //     openIndex = tempOpenIndex;
-            //     closeIndex = tempCloseIndex;
-            //     line = line.substring(line.indexOf('"""', line.indexOf('"""') + 3) + 3);
-            //   } else {
-            //     index = closeIndex;
-            //     closeIndex = tempCloseIndex;
-            //     openIndex = closeIndex - str.length;
-            //   }
-            //   if (closeIndex - openIndex !== str.length) {
-            //     openIndex = closeIndex - str.length;
-            //   }
-            //   break;
-            // }
-            // for (let j = i + 1; j < lines.length; j++) {
-            //   line = lines[j];
-            //   if (line.indexOf('"""') > 0) {
-            //     openIndex = 0;
-            //     closeIndex = line.indexOf('"""') + 3;
-            //     index = closeIndex;
-            //     i = j;
-            //     break;
-            //   } else {
-            //     tokens.push({
-            //       line: j,
-            //       startCharacter: 0,
-            //       length: line.length,
-            //       tokenType: tokenType,
-            //       // text: textToken,
-            //       tokenModifiers: tokenModifiers,
-            //     });
-            //   }
-            // }
+            if ((closeIndex = line.substring(index).indexOf(Enum.Symbols.TQUOTE)) !== -1) {
+              closeIndex += index + 3;
+              index = closeIndex;
+            } else {
+              for (let j = i; j < lines.length; j++) {
+                if ((closeIndex = lines[j].substring(index).indexOf(Enum.Symbols.TQUOTE)) === -1) {
+                  closeIndex = lines[j].length;
+                  tokens.push({
+                    line: j,
+                    startCharacter: openIndex,
+                    length: closeIndex,
+                    tokenType: tokenType,
+                    // text: textToken,
+                    tokenModifiers: tokenModifiers,
+                  });
+                  openIndex = 0;
+                  index = 0;
+                } else {
+                  closeIndex += 3;
+                  index = line.length;
+                  i = j;
+                  break;
+                }
+                if (j === lines.length - 1) {
+                  return tokens;
+                }
+              }
+            }
             break;
           // Tokenize remaining line for comments and annotations
           case Enum.Token.comment:
