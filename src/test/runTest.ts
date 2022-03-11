@@ -24,6 +24,16 @@ async function main() {
 			'--disable-extensions'
 		]
 
+		// Force win64 instead of win32 for testing windows
+		 if (platform === 'win32') {
+			await runTests({
+				extensionDevelopmentPath,
+				extensionTestsPath,
+				version: '1.40.0',
+				platform: 'win32-x64-archive'
+			});
+		}
+
 
 
 
