@@ -1,6 +1,12 @@
 # Code Snippets:
+
+type A
+
+type 
+B
+
 module RealModule {
-  constant realIdentifier = 10 * 0.36 * 0x2020
+  constant realIdentifier = 10 * 0.0123456789 * 0xABCDEFabcdef0123456789
 }
 
 instance blockDrv: Drv.BlockDriver base id 0x0100 \
@@ -13,11 +19,10 @@ instance blockDrv: Drv.BlockDriver base id 0x0100 \
   """
 }
 
-   """ test again with multi line comments
-   """
+   """\"\"\""""
+   """ ABC
+   ABC """
 
-   """ test again
-   this is a comment """
 
 enum AnEnum {
   ENUM_MEMBER

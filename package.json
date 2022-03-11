@@ -60,6 +60,11 @@
         "description": "FPP endpoint of a connection between components."
       },
       {
+        "id": "topology",
+        "superType": "class",
+        "description": "FPP set of component instances and the connections between their ports."
+      },
+      {
         "id": "component",
         "superType": "class",
         "description": "FPP unit of function."
