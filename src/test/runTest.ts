@@ -2,6 +2,9 @@ import * as path from 'path';
 
 import { runTests } from '@vscode/test-electron';
 
+//this provides path for test workspace
+const myTestWorkspace = path.resolve('root')
+
 async function main() {
 	try {
 		// The folder containing the Extension Manifest package.json
@@ -14,6 +17,16 @@ async function main() {
 
 		// Download VS Code, unzip it and run the integration test
 		await runTests({ extensionDevelopmentPath, extensionTestsPath });
+
+		launchArgs: [
+			myTestWorkspace,
+			// This disables other extensions except tested extension
+			'--disable-extensions'
+		]
+
+
+
+
 	} catch (err) {
 		console.error('Failed to run tests');
 		process.exit(1);
