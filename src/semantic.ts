@@ -10,7 +10,6 @@ export const legend = (function () {
     "annotation",
     // Standard (comment unused)
     "namespace", // For identifiers that declare or reference a namespace, module, or package.
-    "class", // For identifiers that declare or reference a class type.
     "enum", // For identifiers that declare or reference an enumeration type.
     "interface", // For identifiers that declare or reference an interface type.
     "struct", // For identifiers that declare or reference a struct type.
