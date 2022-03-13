@@ -4,6 +4,7 @@
   "description": "F Prime Prime Language Support for Visual Studio Code",
   "version": "0.0.1",
   "publisher": "NASA JPL, in collaboration with UNLV CS",
+  "contributors": ["See contributors.txt"],
   "license": "To be added",
   "repository": {
 	  "type": "git",
