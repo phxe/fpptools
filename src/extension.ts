@@ -119,6 +119,35 @@ export function activate(context: vscode.ExtensionContext) {
 
   });
 
+  // fpp tools commands test: fpp from xml
+  // this command will perform converting of F Prime XML files to FPP files.
+  //    input: A list of XML files to translate, specified as a list of files on the command line
+  //    output: FPP source, written to standard output
+  //    Procedure: 
+  //    1 Read each of the files in the list
+  //    2 Generate the output for each F Prime model element in the list
+  vscode.commands.registerCommand("fpptools.fromxml", () => {
+    vscode.window.showInformationMessage("F'' Tools: fpp from XML");
+    // For now, will do just one selected file.
+    var options: vscode.OpenDialogOptions = {
+      filters: {
+        'FPP Files': ['fpp', 'fppi']
+      },
+    };
+
+    vscode.window.showOpenDialog(options).then(files => {
+      if (files) {
+        for (var uri of files) {
+          vscode.window.showInformationMessage(
+            "Selected File: " + uri.fsPath
+          );
+        }
+      }
+    });
+
+    //TODO: Generate the output for the F Prime model element that was selected
+  });
+
   // context.subscriptions.push(
   //   vscode.languages.registerDocumentSemanticTokensProvider(
   //     { language: "fpp" },
