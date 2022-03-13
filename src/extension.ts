@@ -653,6 +653,30 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
+  //identifier completion
+  const identifierProvider = vscode.languages.registerCompletionItemProvider('plaintext',
+  {
+    provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext): vscode.ProviderResult<vscode.CompletionList>
+    {
+      //Variable declaration auto completion
+      const variableCompletion = new vscode.CompletionItem('variable');
+      variableCompletion.kind = vscode.CompletionItemKind.Variable;
+      variableCompletion.insertText = 'variable';
+      variableCompletion.command = {command: 'editor.action.triggerSuggest', title: 'Re-trigger completions...'};
+
+      const classCompletion = new vscode.CompletionItem('class');
+      classCompletion.kind = vscode.CompletionItemKind.Class;
+      classCompletion.insertText = 'class';
+      classCompletion.command = {command: 'editor.action.triggerSuggest', title:'Re-trigger completions...'};
+      
+      //Need to return as array
+      return 
+      [
+        variableCompletion,
+        classCompletion
+      ];
+    }
+  });
   //For de-registering of extension if needed
   context.subscriptions.push(keywordProvider); 
 }
