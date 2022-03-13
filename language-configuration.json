@@ -68,12 +68,20 @@
   },
 
   "wordPattern": "([^\\s\\{\\}\\[\\]\\(\\)\\/\\\\\\#\\@\\*\\+\\-\\=\\;\\:\\'\\&\\~\\!\\%\"\\,\\.\\<\\>\\?\\|\\`\\^]+)|(-?\\d*.\\d*)",
-
+  
+  //Indent or decreases indent when pattern is found
+  "indentationRules": {
+    "increaseIndentPattern": "\\(|\\{}|\\{|\\(\\)\\{|\\[|\\/\/", //Something into ( or something into { or something into \
+    "decreaseIndentPattern": "}",
+    //"indentNextLinePattern": "\\(|\\/\/",
+    //"unIndentedLinePattern": "}|}\\(\\)\\{" //an if else statement if (,,) {..} else {..}
+  },
+  
   //Rules on enter key press
   "onEnterRules": [
     {
       "beforeText": "\\(|\\{|\\[",
       "action": { "indent": "indentOutdent" }
     }
-  ]
+  ] 
 }
