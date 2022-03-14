@@ -20,27 +20,56 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     // users will be able to select multiple files. Only .FPP files will appear.
-    var options: vscode.OpenDialogOptions = {
+    var fileOptions: vscode.OpenDialogOptions = {
       canSelectMany: true,
       filters: {
         'FPP Files': ['fpp', 'fppi']
       }
-    }
+    };
+
+    var selectionOptions: vscode.QuickPickOptions = {
+      canPickMany: false,
+      ignoreFocusOut: false,
+      placeHolder: "Use current file in editor, or open new file(s)?",
+    };
+
+    const quickPickSelection: Array<vscode.QuickPickItem> = [
+      {
+        label: "Run on current file in editor",
+        description: "Run fpp-check on current file in the editor"
+      },
+      {
+        label: "Open new file(s)",
+        description: "Run fpp-check on existing .fpp file(s)"
+      }
+    ];
+  
     // if we have a current workspace folder, we will default to that. Otherwise,
     // open up the file explorer without a default filepath.
     if(vscode.workspace.workspaceFolders !== undefined) {
-      let filepath = vscode.workspace.workspaceFolders[0].uri
-      options.defaultUri = filepath
+      let filepath = vscode.workspace.workspaceFolders[0].uri;
+      fileOptions.defaultUri = filepath;
     }
-    vscode.window.showOpenDialog(options).then(files => {
-      if (files){
-        for (var uri of files) {
-          vscode.window.showInformationMessage(
-            "Selected File: " + uri.fsPath
-          )
-        }
+
+    //choose from current file in editor or open a file:
+    vscode.window.showQuickPick(quickPickSelection, selectionOptions).then(selection => {
+      if (selection.label === "Run on current file in editor") {
+        // TODO: get currently open file in editor
+        vscode.window.showInformationMessage("Selected File: " + vscode.window.activeTextEditor?.document.uri.fsPath);
+      } else {
+        // Open file explorer
+        vscode.window.showOpenDialog(fileOptions).then(files => {
+          if (files) {
+            for (var uri of files) {
+              vscode.window.showInformationMessage("Selected File: " + uri.fsPath);
+            }
+          }
+        });
+    
       }
-    })
+    });
+
+
     // TODO: once filepaths are obtained, files will be checked using the fpp-check tool in some way.
   });
 
@@ -81,7 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         }
       }
-    })
+    });
 
     // once file/s selected:
     //    1. parse each file, generate list of translation units
@@ -103,17 +132,17 @@ export function activate(context: vscode.ExtensionContext) {
       filters: {
         'FPP Files': ['fpp', 'fppi']
       }
-    }
+    };
 
     vscode.window.showOpenDialog(options).then(files => {
       if (files){
         for (var uri of files) {
           vscode.window.showInformationMessage(
             "Selected File: " + uri.fsPath
-          )
+          );
         }
       }
-    })
+    });
 
 
 
