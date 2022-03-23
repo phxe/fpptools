@@ -1,145 +1,66 @@
-# Code Snippets:
+# Test code:
 
+# Valid
 type A
-
-type 
+type \
 B
 
-module RealModule {
-  constant realIdentifier = 10 * 0.0123456789 * 0xABCDEFabcdef0123456789
+# Error
+# type A
+# type 
+# C
+
+# Valid 
+array C = [3] U8
+array D = [3] A
+array E = [3] F32 default [ 1, 2, 3 ]
+array F = [3] U32 default 1
+array G = [3] U32 default 1 format "{.03f}"
+
+
+# Error
+# array H = [3] X
+# array C = [3] U32 default 1
+# array I = U32 default 1
+# array J = [5] F32 default [ 1, 2, 3 ]
+# array K = [3] U32 default 1 format {.03f}
+
+# Valid
+active component L {
+  enum M {
+    N
+  }
+  enum O: U32 {
+    P
+    Q
+    R
+  } default R
+ guarded input port S: M.N
+ command recv port T
+ event port U
+ text event port V
+ time get port W
+#  async command H \
+#    opcode 0
+#  event I(
+#          Id: U32 @< The parameter ID
+#         ) \
+#    severity warning low \
+#    id 0 \
+#    format "Parameter ID 0x{x} not found" \
+#    throttle 5
 }
 
-instance blockDrv: Drv.BlockDriver base id 0x0100 \
-  queue size RealModule.realIdentifier \
-  stack size FakeModule.fakeIdentifier \
-  priority 140 \
-{
-  phase Fpp.ToCpp.Phases.instances """
-  // Declared in RefTopologyDefs.cpp
-  """
-}
+# module RealModule {
+#   constant realIdentifier = 10 * 0.0123456789 * 0xABCDEFabcdef0123456789
+# }
+# 
+# instance blockDrv: Drv.BlockDriver base id 0x0100 \
+#   queue size RealModule.realIdentifier \
+#   priority 140 \
+# {
+#   phase Fpp.ToCpp.Phases.instances """
+#   // Declared in RefTopologyDefs.cpp
+#   """
+# }
 
-   """\"\"\""""
-   """ ABC
-   ABC """
-
-
-enum AnEnum {
-  ENUM_MEMBER
-}
-
-AnEnum.ENUM_MEMBER
-NotAnEnum.ENUM_MEMBER
-
-# Operators:
-)
-]
-}
-(
-*
-+
-,
--
-->
-.
-/
-:
-;
-=
-[
-{
-
-# Symbols:
-\
-#
-@
-@<
-
-# Types:
-F32
-F64
-I16
-I32
-I64
-I8
-U16
-U32
-U64
-U8
-array
-bool
-enum
-string
-struct
-type
-constant
-
-# Keywords:
-active
-activity
-always
-assert
-async
-at
-base
-block
-change
-command
-component
-connections
-cpu
-default
-diagnostic
-drop
-event
-false
-fatal
-format
-get
-guarded
-health
-high
-id
-import
-include
-input
-instance
-internal
-locate
-low
-match
-module
-on
-opcode
-orange
-output
-param
-passive
-phase
-port
-priority
-private
-queue
-queued
-recv
-red
-ref
-reg
-resp
-save
-serial
-set
-severity
-size
-stack
-sync
-telemetry
-text
-throttle
-time
-topology
-true
-update
-warning
-with
-yellow
