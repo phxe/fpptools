@@ -3,61 +3,59 @@ import * as FPP from "./constants";
 import { Scanner } from "./scanner";
 import { Visitor } from "./visitor";
 
-export var tokens: Parser.ParsedToken[] = [];
-
 const tokenTypes = new Map<string, number>();
 const tokenModifiers = new Map<string, number>();
+export var tokens: Parser.ParsedToken[] = [];
 
 export const legend = (function () {
   const tokenTypesLegend = [
     // Custom
-    FPP.TokenType.nil,
-    FPP.TokenType.annotation,
-    FPP.TokenType.component,
-    FPP.TokenType.instance,
-    FPP.TokenType.port,
-    FPP.TokenType.topology,
+    FPP.TokenType.NIL,
+    FPP.TokenType.ANNOTATION,
+    FPP.TokenType.COMPONENT,
+    FPP.TokenType.INSTANCE,
+    FPP.TokenType.PORT,
+    FPP.TokenType.TOPOLOGY,
     // Standard (comment unused)
-    FPP.TokenType.namespace, // For identifiers that declare or reference a namespace, module, or package.
-    FPP.TokenType.class, // For identifiers that declare or reference a class type.
-    FPP.TokenType.enum, // For identifiers that declare or reference an enumeration type.
-    FPP.TokenType.interface, // For identifiers that declare or reference an interface type.
-    FPP.TokenType.struct, // For identifiers that declare or reference a struct type.
-    FPP.TokenType.typeParameter, // For identifiers that declare or reference a type parameter.
-    FPP.TokenType.type, // For identifiers that declare or reference a type that is not covered above.
-    FPP.TokenType.parameter, // For identifiers that declare or reference a function or method parameters.
-    FPP.TokenType.variable, // For identifiers that declare or reference a local or global variable.
-    FPP.TokenType.property, // For identifiers that declare or reference a member property, member field, or member variable.
-    FPP.TokenType.enumMember, // For identifiers that declare or reference an enumeration property, constant, or member.
-    FPP.TokenType.decorator, // For identifiers that declare or reference decorators and annotations.
-    FPP.TokenType.event, // For identifiers that declare an event property.
-    FPP.TokenType.function, // For identifiers that declare a function.
-    FPP.TokenType.method, // For identifiers that declare a member function or method.
-    FPP.TokenType.macro, // For identifiers that declare a macro.
-    FPP.TokenType.label, // For identifiers that declare a label.
-    FPP.TokenType.comment, // For tokens that represent a comment.
-    FPP.TokenType.string, // For tokens that represent a string literal.
-    FPP.TokenType.keyword, // For tokens that represent a language keyword.
-    FPP.TokenType.number, // For tokens that represent a number literal.
-    FPP.TokenType.regexp, // For tokens that represent a regular expression literal.
-    FPP.TokenType.operator, // For tokens that represent an operator.
+    FPP.TokenType.NAMESPACE, // For identifiers that declare or reference a namespace, module, or package.
+    FPP.TokenType.CLASS, // For identifiers that declare or reference a class type.
+    FPP.TokenType.ENUM, // For identifiers that declare or reference an enumeration type.
+    FPP.TokenType.INTERFACE, // For identifiers that declare or reference an interface type.
+    FPP.TokenType.STRUCT, // For identifiers that declare or reference a struct type.
+    FPP.TokenType.TYPEPARAMETER, // For identifiers that declare or reference a type parameter.
+    FPP.TokenType.TYPE, // For identifiers that declare or reference a type that is not covered above.
+    FPP.TokenType.PARAMETER, // For identifiers that declare or reference a function or method parameters.
+    FPP.TokenType.VARIABLE, // For identifiers that declare or reference a local or global variable.
+    FPP.TokenType.PROPERTY, // For identifiers that declare or reference a member property, member field, or member variable.
+    FPP.TokenType.ENUMMEMBER, // For identifiers that declare or reference an enumeration property, constant, or member.
+    FPP.TokenType.DECORATOR, // For identifiers that declare or reference decorators and annotations.
+    FPP.TokenType.EVENT, // For identifiers that declare an event property.
+    FPP.TokenType.FUNCTION, // For identifiers that declare a function.
+    FPP.TokenType.METHOD, // For identifiers that declare a member function or method.
+    FPP.TokenType.MACRO, // For identifiers that declare a macro.
+    FPP.TokenType.LABEL, // For identifiers that declare a label.
+    FPP.TokenType.COMMENT, // For tokens that represent a comment.
+    FPP.TokenType.STRING, // For tokens that represent a string literal.
+    FPP.TokenType.KEYWORD, // For tokens that represent a language keyword.
+    FPP.TokenType.NUMBER, // For tokens that represent a number literal.
+    FPP.TokenType.REGEXP, // For tokens that represent a regular expression literal.
+    FPP.TokenType.OPERATOR, // For tokens that represent an operator.
   ];
   tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
 
   const tokenModifiersLegend = [
     // Custom
-    FPP.TokenType.component_kind,
     // Standard (comment unused)
-    FPP.TokenType.declaration, // For declarations of symbols.
-    FPP.TokenType.definition, // For definitions of symbols, for example, in header files.
-    FPP.TokenType.readonly, // For readonly variables and member fields (constants).
-    FPP.TokenType.static, // For class members (static members).
-    FPP.TokenType.deprecated, // For symbols that should no longer be used.
-    FPP.TokenType.abstract, // For types and member functions that are abstract.
-    FPP.TokenType.async, // For functions that are marked async.
-    FPP.TokenType.modification, // For variable references where the variable is assigned to.
-    FPP.TokenType.documentation, // For occurrences of symbols in documentation.
-    FPP.TokenType.defaultLibrary, // For symbols that are part of the standard library.
+    FPP.TokenType.DECLARATION, // For declarations of symbols.
+    FPP.TokenType.DEFINITION, // For definitions of symbols, for example, in header files.
+    FPP.TokenType.READONLY, // For readonly variables and member fields (constants).
+    FPP.TokenType.STATIC, // For class members (static members).
+    FPP.TokenType.DEPRECATED, // For symbols that should no longer be used.
+    FPP.TokenType.ABSTRACT, // For types and member functions that are abstract.
+    FPP.TokenType.ASYNC, // For functions that are marked async.
+    FPP.TokenType.MODIFICATION, // For variable references where the variable is assigned to.
+    FPP.TokenType.DOCUMENTATION, // For occurrences of symbols in documentation.
+    FPP.TokenType.DEFAULTLIBRARY, // For symbols that are part of the standard library.
   ];
   tokenModifiersLegend.forEach((tokenModifier, index) => tokenModifiers.set(tokenModifier, index));
 
@@ -65,12 +63,13 @@ export const legend = (function () {
 })();
 
 export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
-  async provideDocumentSemanticTokens(
+  provideDocumentSemanticTokens(
     document: vscode.TextDocument,
     token: vscode.CancellationToken
-  ): Promise<vscode.SemanticTokens> {
-    tokens = Scanner.scanDocument(document.getText());
-    Visitor.visitTokens();
+  ): vscode.SemanticTokens {
+    tokens = [];
+    Scanner.scanDocument(document.getText());
+    Visitor.visitDocument();
     const builder = new vscode.SemanticTokensBuilder();
     tokens.forEach((token) => {
       builder.push(
@@ -115,12 +114,24 @@ export module Parser {
 
   export function parseTextToken(text: string): string {
     /* eslint-disable curly */
-    if (FPP.isMember(text, FPP.Types)) return FPP.TokenType.type;
-    if (FPP.isMember(text, FPP.Keywords)) return FPP.TokenType.keyword;
-    if (FPP.isValue(text, FPP.Operators)) return FPP.TokenType.operator;
-
-    if (isIdentifier(text)) return "IDENTIFIER";
-    return "UNKNOWN";
+    switch (text) {
+      case FPP.Symbols.TQUOTE:
+        return FPP.Symbols.TQUOTE;
+      case FPP.Symbols.QUOTE:
+        return FPP.Symbols.QUOTE;
+      case FPP.Symbols.COMMENT:
+        return FPP.TokenType.COMMENT;
+      case FPP.Symbols.PREANNOTATION:
+        return FPP.TokenType.ANNOTATION;
+      case FPP.Symbols.POSTANNOTATION:
+        return FPP.TokenType.ANNOTATION;
+      default:
+        if (FPP.isMember(text, FPP.Types)) return FPP.TokenType.TYPE;
+        if (FPP.isMember(text, FPP.Keywords)) return FPP.TokenType.KEYWORD;
+        if (FPP.isValue(text, FPP.Operators)) return FPP.TokenType.OPERATOR;
+        if (isNumber(text)) return FPP.TokenType.NUMBER;
+        return FPP.TokenType.NIL;
+    }
   }
 
   export function isIdentifier(str: string): boolean {

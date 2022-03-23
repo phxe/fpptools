@@ -1,10 +1,8 @@
-import { close } from "fs";
 import * as FPP from "./constants";
-import { Parser } from "./parser";
+import { Parser, tokens } from "./parser";
 
 export module Scanner {
-  export function scanDocument(text: string): Parser.ParsedToken[] {
-    const tokens: Parser.ParsedToken[] = [];
+  export function scanDocument(text: string) {
     const lines = text.split(/\r\n|\r|\n/);
     let index = 0;
     let textToken = "";
@@ -41,54 +39,29 @@ export module Scanner {
         }
 
         textToken = line.substring(openIndex, closeIndex);
-        tokenType = parseUnique(textToken);
+        tokenType = Parser.parseTextToken(textToken);
 
         index = closeIndex;
 
         // Special token handling
         switch (tokenType) {
-          case FPP.Symbols.BSLASH:
-            tokenType = FPP.TokenType.operator;
-            // TODO
-            // backslash identifies a new line, other wise something needs to be next to the declaration
-            // example: constant a \
-            //              = 1
-            // this is acceptable, without the \ the code should show an error
-            console.log(line);
-            console.log(line.lastIndexOf("\\")); // should present the BSLASH
-            // need to know what is on the next line below BSLASH
-            // matching the datatype to its appropriate value if on separate lines
-
-            // if there isn't a BSLASH check to see if the current line is properly finished off
-            // this being with a variable declaration, or some statement
-            // ENSURE that the BSLASH is applicable to the statement/whatever
-            console.log(line[line.indexOf("\\")]); // this will identify the BSLASH index on every line
-            if (line.lastIndexOf("\\")) {
-              tokens.push({
-                line: i,
-                startCharacter: line.indexOf("\\"),
-                length: line.length - line.indexOf("\\"),
-                tokenType: tokenType,
-                text: textToken,
-                tokenModifiers: [""],
-              });
-            }
-            break;
           case FPP.Symbols.QUOTE:
+            let k = closeIndex;
             while (
-              (line[closeIndex] !== '"' && closeIndex < line.length) ||
-              (line[closeIndex] === '"' &&
-                line[closeIndex - 1] === "\\" &&
-                closeIndex < line.length)
+              (line[k] !== '"' && k < line.length) ||
+              (line[k] === '"' && line[k - 1] === "\\" && k < line.length)
             ) {
-              closeIndex++;
+              k++;
             }
-            closeIndex++;
-            index = closeIndex;
-            tokenType = FPP.TokenType.string;
+            if (k !== line.length) {
+              closeIndex = k + 1;
+              index = closeIndex;
+              textToken = line.substring(openIndex, closeIndex);
+              tokenType = FPP.TokenType.STRING;
+            }
             break;
           case FPP.Symbols.TQUOTE:
-            tokenType = FPP.TokenType.string;
+            tokenType = FPP.TokenType.STRING;
             if ((closeIndex = line.substring(index).indexOf(FPP.Symbols.TQUOTE)) !== -1) {
               closeIndex += index + 3;
               index = closeIndex;
@@ -113,14 +86,14 @@ export module Scanner {
                   break;
                 }
                 if (j === lines.length - 1) {
-                  return tokens;
+                  return;
                 }
               }
             }
             break;
           // Tokenize remaining line for comments and annotations
-          case FPP.TokenType.comment:
-          case FPP.TokenType.annotation:
+          case FPP.TokenType.COMMENT:
+          case FPP.TokenType.ANNOTATION:
             textToken = line.substring(openIndex);
             index = line.length;
             closeIndex = index;
@@ -137,7 +110,7 @@ export module Scanner {
         });
       }
     }
-    return tokens;
+    return;
   }
 
   function getCloseIndex(text: string, curr: number): number {
@@ -162,28 +135,5 @@ export module Scanner {
       return true;
     }
     return false;
-  }
-
-  function parseUnique(text: string): string {
-    switch (text) {
-      case FPP.Symbols.BSLASH:
-        return FPP.Symbols.BSLASH;
-      case FPP.Symbols.TQUOTE:
-        return FPP.Symbols.TQUOTE;
-      case FPP.Symbols.QUOTE:
-        return FPP.Symbols.QUOTE;
-      case FPP.Symbols.COMMENT:
-        return FPP.TokenType.comment;
-      case FPP.Symbols.PREANNOTATION:
-        return FPP.TokenType.annotation;
-      case FPP.Symbols.POSTANNOTATION:
-        return FPP.TokenType.annotation;
-      default:
-        if (Parser.isNumber(text)) {
-          return FPP.TokenType.number;
-        } else {
-          return FPP.TokenType.nil;
-        }
-    }
   }
 }
