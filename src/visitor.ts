@@ -269,12 +269,9 @@ export module Visitor {
   // constant identifier = expression
   function visitConstantDef(index: number): number {
     console.log("Visiting Constant Definition\tNext Token:\t", tokens[index + 1]?.text);
-    FPP.Types.constant;
-    index = visitIdentifier(++index, FPP.KeywordTokensMap.CONSTANT, [FPP.TokenType.DECLARATION]);
-    if (tokens[index + 1]?.text === FPP.Operators.EQ) {
-      index = visitExpression(index + 2);
-    } else {
-      console.log("Invalid Operator\t\tCurrent Token:\t", tokens[index + 1].text);
+    index = visitIdentifier(++index, FPP.KeywordTokensMap.CONSTANT, [FPP.TokenType.DECLARATION, FPP.TokenType.READONLY]);
+    if (++index === visitToken(index, FPP.Operators.EQ, true)) {
+      index = visitExpression(++index);
     }
     // TODO
     return index;
@@ -334,7 +331,11 @@ export module Visitor {
   // port identifier [ ( param-list ) ] [ -> type-name ]
   function visitPortDef(index: number): number {
     console.log("Visiting Port Definition\tNext Token:\t", tokens[index + 1]?.text);
-    FPP.KeywordTokensMap.PORT;
+    index = visitIdentifier(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION, FPP.TokenType.READONLY]);
+    index = visitParamList(index);
+    if (index === (index = visitToken(index, FPP.Operators.RARROW, true))) {
+      index = visitType(++index);
+    }
     // TODO
     return index;
   }
@@ -350,6 +351,36 @@ export module Visitor {
     console.log("Visiting Topology Definition\tNext Token:\t", tokens[index + 1]?.text);
     FPP.KeywordTokensMap.TOPOLOGY;
     // TODO
+    return index;
+  }
+
+  // [ ref ] identifier : type-name
+  function visitParamDef(index: number): number {
+    // TODO:  Param Identifiers are not highlighted
+    //        Add the many value ways for params to be seperated
+
+    console.log("Visiting Parameter identifier\tCurrent Token:\t", tokens[index]?.text);
+    console.log("Expecting Token(s):\t", FPP.Keywords.ref, "\tCurrent Token:\t", tokens[index].text);
+    if (FPP.Keywords.ref.includes(tokens[index].text)) {
+      index++;
+    }
+    if (Parser.isIdentifier(tokens[index].text)) {
+      console.log("New Identifier\t\t\tCurrent Token:\t", tokens[index].text);
+      identifiers.set(tokens[index].text, [tokens[index].text, FPP.KeywordTokensMap.PARAM, [FPP.TokenType.DECLARATION, FPP.TokenType.PARAMETER]]);
+    } else {
+      console.log("Invalid Identifier\t\tCurrent Token:\t", tokens[index].text);
+      // Error
+      let thisLine = tokens[index].line;
+      while (tokens[index++].line === thisLine) {}
+      return index;
+    }
+    if (index < (index = visitToken(++index, FPP.Operators.COLON, true))) {
+      index = visitType(++index);
+    }
+    if (tokens[++index].tokenType === FPP.TokenType.ANNOTATION) {
+      console.log("Has Annotation:\t\t\tCurrent Token:\t", tokens[index]?.text);
+    }
+    console.log("Exiting Parameter identifier");
     return index;
   }
 
@@ -548,6 +579,21 @@ export module Visitor {
       // TODO
     }
     currentScope.pop();
+    return index;
+  }
+
+    // List of Param identifiers
+  function visitParamList(index: number): number {
+    console.log("Visiting Formal Parameter List");
+    if (index < (index = visitToken(++index, FPP.Operators.LPAREN, true))) {
+      do {
+        if (FPP.Operators.RPAREN.includes(tokens[++index]?.text)) {
+          console.log("Leaving Formal Parameter List");
+          return ++index;
+        }
+      } while(index < (index = visitParamDef(index)));
+      console.log("Invaild exit of Parameter List\tCurrent Token:", tokens[index]?.text);
+    }
     return index;
   }
 
