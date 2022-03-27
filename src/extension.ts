@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { DocumentSemanticTokensProvider, legend } from "./semantic";
+import { DocumentSemanticTokensProvider, legend } from "./parser";
 
 vscode.window.showInformationMessage("F`` Extension Active");
 

@@ -270,6 +270,12 @@ export module Visitor {
   function visitConstantDef(index: number): number {
     console.log("Visiting Constant Definition\tNext Token:\t", tokens[index + 1]?.text);
     FPP.Types.constant;
+    index = visitIdentifier(++index, FPP.KeywordTokensMap.CONSTANT, [FPP.TokenType.DECLARATION]);
+    if (tokens[index + 1]?.text === FPP.Operators.EQ) {
+      index = visitExpression(index + 2);
+    } else {
+      console.log("Invalid Operator\t\tCurrent Token:\t", tokens[index + 1].text);
+    }
     // TODO
     return index;
   }
