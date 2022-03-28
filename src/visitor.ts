@@ -355,33 +355,36 @@ export module Visitor {
   }
 
   // [ ref ] identifier : type-name
-  function visitParamDef(index: number): number {
-    // TODO:  Param Identifiers are not highlighted
-    //        Add the many value ways for params to be seperated
-
+  function visitParamDef(index: number): {index: number, vaildNext: boolean} {
     console.log("Visiting Parameter identifier\tCurrent Token:\t", tokens[index]?.text);
+    var vaildNext = false;
     console.log("Expecting Token(s):\t", FPP.Keywords.ref, "\tCurrent Token:\t", tokens[index].text);
     if (FPP.Keywords.ref.includes(tokens[index].text)) {
       index++;
     }
     if (Parser.isIdentifier(tokens[index].text)) {
       console.log("New Identifier\t\t\tCurrent Token:\t", tokens[index].text);
-      identifiers.set(tokens[index].text, [tokens[index].text, FPP.KeywordTokensMap.PARAM, [FPP.TokenType.DECLARATION, FPP.TokenType.PARAMETER]]);
+      tokens[index].tokenType = FPP.KeywordTokensMap.PARAM;
+      tokens[index].tokenModifiers = [FPP.TokenType.DECLARATION, FPP.TokenType.PARAMETER];
     } else {
       console.log("Invalid Identifier\t\tCurrent Token:\t", tokens[index].text);
       // Error
-      let thisLine = tokens[index].line;
+      let thisLine = tokens[index].line; 
       while (tokens[index++].line === thisLine) {}
-      return index;
+      return {index, vaildNext};
     }
     if (index < (index = visitToken(++index, FPP.Operators.COLON, true))) {
       index = visitType(++index);
     }
-    if (tokens[++index].tokenType === FPP.TokenType.ANNOTATION) {
-      console.log("Has Annotation:\t\t\tCurrent Token:\t", tokens[index]?.text);
+    if (FPP.Operators.SEMICOLON === tokens[index + 1]?.text) {
+      ++index;
+      vaildNext = true;
+    }
+    if (tokens[index + 1].tokenType === FPP.TokenType.ANNOTATION) {
+      console.log("Has Annotation:\t\t\tCurrent Token:\t", tokens[++index]?.text);
     }
     console.log("Exiting Parameter identifier");
-    return index;
+    return {index, vaildNext};
   }
 
   //---------------------------------------------------------------------------\\
@@ -585,13 +588,21 @@ export module Visitor {
     // List of Param identifiers
   function visitParamList(index: number): number {
     console.log("Visiting Formal Parameter List");
+    var vaildNext = true;
     if (index < (index = visitToken(++index, FPP.Operators.LPAREN, true))) {
-      do {
-        if (FPP.Operators.RPAREN.includes(tokens[++index]?.text)) {
+      while(index < tokens.length) {
+        if (FPP.Operators.RPAREN === tokens[++index]?.text) {
           console.log("Leaving Formal Parameter List");
           return ++index;
+        } else {
+          if (!vaildNext && tokens[index - 1].line === tokens[index].line) {
+              console.log("Invaild Parameter Sequence\tCurrent Token:", tokens[index]?.text);
+              return index;
+          }
         }
-      } while(index < (index = visitParamDef(index)));
+        if (index >= ({index, vaildNext} = visitParamDef(index)).index)
+          {break;}
+      }
       console.log("Invaild exit of Parameter List\tCurrent Token:", tokens[index]?.text);
     }
     return index;
