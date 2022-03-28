@@ -331,8 +331,8 @@ export module Visitor {
   function visitPortDef(index: number): number {
     console.log("Visiting Port Definition\tNext Token:\t", tokens[index + 1]?.text);
     index = visitIdentifier(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION, FPP.TokenType.READONLY]);
-    index = visitParamList(index);
-    if (index === (index = visitToken(index, FPP.Operators.RARROW, true))) {
+    index = visitParamList(++index);
+    if (index === (index = visitToken(++index, FPP.Operators.RARROW, true))) {
       index = visitType(++index);
     }
     return index;
@@ -356,7 +356,7 @@ export module Visitor {
   function visitParamDef(index: number): number {
     console.log("Visiting Parameter identifier\tCurrent Token:\t", tokens[index]?.text);
     console.log("Expecting Token(s):\t", FPP.Keywords.ref, "\tCurrent Token:\t", tokens[index].text);
-    if (FPP.Keywords.ref.includes(tokens[index].text)) {
+    if (FPP.Keywords.ref === tokens[index].text) {
       index++;
     }
     if (Parser.isIdentifier(tokens[index].text)) {
@@ -385,7 +385,7 @@ export module Visitor {
   // command-kind command identifier [ ( param-list ) ] [ opcode expression ] [ priority expression ] [ queue-full-behavior ]
   function visitCommandSpec(index: number): number {
     console.log("Visiting Command Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    var queueFullSpec = false;
+    let queueFullSpec = false;
     switch(tokens[index]?.text) {
       case FPP.Keywords.async:
         queueFullSpec = true;
@@ -397,40 +397,30 @@ export module Visitor {
         console.log("Invalid command-kind\tCurrent Token:\t", tokens[index]?.text);
         return index;
     }
-    if (tokens[++index]?.text !== FPP.Keywords.command) {
+    if (index >= (index = visitToken(++index, FPP.Keywords.command, true))) {
       console.log("Invalid command specifier sequence\tCurrent Token:\t", tokens[index]?.text);
       return index;
     }
-    index = visitIdentifier(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
-    index++;
-    if (tokens[index]?.text === FPP.Operators.LPAREN) {
-      index = visitParamList(index);
-    }
-    if (tokens[index]?.text === FPP.Keywords.opcode) {
+    index = visitIdentifier(++index, FPP.KeywordTokensMap.COMPONENT, []);
+    index = visitParamList(++index);
+    if (index < (index = visitToken(++index, FPP.Keywords.opcode, true))) {
       console.log("Found opcode expression");
       if (index >= (index = visitExpression(++index))) {
         console.log("Invalid opcode expression\tCurrent Token:\t", tokens[index]?.text);
       }
-      index++;
     }
-    if (tokens[index]?.text === FPP.Keywords.priority) {
+    if (index < (index = visitToken(++index, FPP.Keywords.priority, true))) {
       console.log("Found priority expression");
       if (index >= (index = visitExpression(++index))) {
         console.log("Invalid priority expression\tCurrent Token:\t", tokens[index]?.text);
       }
-      index++;
     }
-    switch(tokens[index]?.text) {
-       case FPP.Keywords.assert:
-       case FPP.Keywords.block:
-       case FPP.Keywords.drop:
-        index++;
-        if (!queueFullSpec) {
-          console.log("queue-full-behavior may only be indicated in an 'async' queue");
-        } else {
-          console.log("Found queue-full-behavior adjective, '" + tokens[index]?.text + "'");
-        }
-       default:
+    if (index < (index = visitToken(++index, [FPP.Keywords.assert, FPP.Keywords.block, FPP.Keywords.drop], true))) {
+      if (!queueFullSpec) {
+        console.log("queue-full-behavior may only be indicated in an 'async' queue");
+      } else {
+        console.log("Found queue-full-behavior adjective, '" + tokens[index]?.text + "'");
+      }
     }
     return index;
   }
@@ -623,30 +613,30 @@ export module Visitor {
 
     // List of Param identifiers
   function visitParamList(index: number): number {
-    console.log("Visiting Formal Parameter List");
-    var vaildNext = true;
-    if (tokens[index].text === FPP.Operators.LPAREN) {
-      while(index < tokens.length) {
-        if (FPP.Operators.RPAREN === tokens[++index]?.text) {
-          console.log("Leaving Formal Parameter List");
-          return ++index;
-        } else {
-          if (!vaildNext && tokens[index - 1].line === tokens[index].line) {
+    if (index <= (index = visitToken(index, FPP.Operators.LPAREN, true))) {
+      console.log("Visiting Formal Parameter List");
+      let vaildNext = true;
+      if (++index < tokens.length) {
+        do {
+          if (FPP.Operators.RPAREN === tokens[index]?.text) {
+            console.log("Leaving Formal Parameter List");
+            return index;
+          } else if (!vaildNext && tokens[index - 1].line === tokens[index].line) {
               console.log("Invaild Parameter Sequence\tCurrent Token:", tokens[index]?.text);
               return index;
           }
-        }
-        if (index >= (index = visitParamDef(index)))
-          {break;}
-        if (FPP.Operators.SEMICOLON === tokens[index + 1]?.text) {
-          ++index;
-          vaildNext = true;
-        } else {
-          vaildNext = false;
-        }
-        if (tokens[index + 1].tokenType === FPP.TokenType.ANNOTATION) {
-          console.log("Has Annotation:\t\t\tCurrent Token:\t", tokens[++index]?.text);
-        }
+          if (index >= (index = visitParamDef(index)) || ++index >= tokens.length)
+            {break;}
+          if (FPP.Operators.SEMICOLON === tokens[index]?.text) {
+            index++;
+            vaildNext = true;
+          } else {
+            vaildNext = false;
+          }
+          if (tokens[index].tokenType === FPP.TokenType.ANNOTATION) {
+            console.log("Has Annotation:\t\t\tCurrent Token:\t", tokens[++index]?.text);
+          }
+        } while(true);
       }
       console.log("Invaild exit of Parameter List\tCurrent Token:", tokens[index]?.text);
     }
