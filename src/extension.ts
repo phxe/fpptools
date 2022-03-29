@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
 import { DocumentSemanticTokensProvider, legend } from "./parser";
+import { Diagnostics } from "./diagnostics";
 
 vscode.window.showInformationMessage("F`` Extension Active");
 
 export function activate(context: vscode.ExtensionContext) {
+  Diagnostics.createCollection();
   vscode.commands.registerCommand("fpp.example", () => {
     vscode.window.showInformationMessage("Example launched!");
   });

@@ -1,4 +1,5 @@
 import * as FPP from "./constants";
+import { Diagnostics } from "./diagnostics";
 import { Parser, tokens } from "./parser";
 
 const identifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
@@ -184,6 +185,7 @@ export module Visitor {
         }
       } else {
         console.log("Invalid Identifier\t\tCurrent Token:\t", tokens[index].text);
+        Diagnostics.createFromToken("Invalid Identifier: "+ tokens[index].text, tokens[index], 0);
         // let thisLine = tokens[index].line;
         // while (tokens[index++].line === thisLine) {}
         // return index;

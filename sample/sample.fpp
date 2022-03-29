@@ -1,5 +1,9 @@
 # Test code:
 
+# Diagnostic Error Example
+# type F32
+# type default
+
 # Valid
 type A
 type \

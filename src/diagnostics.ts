@@ -1,4 +1,3 @@
-import internal = require("stream");
 import * as vscode from "vscode";
 import { Parser } from "./parser";
 

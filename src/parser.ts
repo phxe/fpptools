@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as FPP from "./constants";
+import { Diagnostics } from "./diagnostics";
 import { Scanner } from "./scanner";
 import { Visitor } from "./visitor";
 
@@ -68,6 +69,7 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     token: vscode.CancellationToken
   ): vscode.SemanticTokens {
     tokens = [];
+    Diagnostics.clear(document);
     Scanner.scanDocument(document.getText());
     Visitor.visitDocument();
     const builder = new vscode.SemanticTokensBuilder();
