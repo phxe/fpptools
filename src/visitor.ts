@@ -399,7 +399,7 @@ export module Visitor {
         console.log("Invalid command-kind\tCurrent Token:\t", tokens[index]?.text);
         return index;
     }
-    if (index >= (index = visitToken(++index, FPP.Keywords.command, true))) {
+    if (index === (index = visitToken(++index, FPP.Keywords.command, true))) {
       console.log("Invalid command specifier sequence\tCurrent Token:\t", tokens[index]?.text);
       return index;
     }
@@ -501,14 +501,34 @@ export module Visitor {
   // include string-literal
   function visitIncludeSpec(index: number): number {
     console.log("Visiting Include Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    // TODO
+    if (tokens[index]?.text === FPP.Keywords.include) {
+      if (tokens[++index].tokenType !== FPP.TokenType.STRING) {
+        console.log("Notice: Expected String\t\tFound Token:\t", tokens[index--]?.text);
+      }
+    }
     return index;
   }
 
   // internal port identifier [ ( param-list ) ] [ priority expression ] [ queue-full-behavior ]
   function visitInternalPortSpec(index: number): number {
     console.log("Visiting Internal Port Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    // TODO
+    if (tokens[index]?.text === FPP.Keywords.internal) {
+      if (index < (index = visitToken(++index, FPP.Keywords.port, true))) {
+        index = visitIdentifier(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
+        index = visitParamList(++index);
+        if (index < (index = visitToken(++index, FPP.Keywords.priority, true))) {
+          console.log("Found priority expression");
+          if (index >= (index = visitExpression(++index))) {
+            console.log("Invalid priority expression\tCurrent Token:\t", tokens[index]?.text);
+          }
+        }
+        if (index < (index = visitToken(++index, [FPP.Keywords.assert, FPP.Keywords.block, FPP.Keywords.drop], true))) {
+          console.log("Found queue-full-behavior adjective, '" + tokens[index]?.text + "'");
+        }
+      } else {
+        console.log("Invaild internal port defition. Expected 'port'. Found ", tokens[index]?.text);
+      }
+    }
     return index;
   }
 
@@ -519,8 +539,19 @@ export module Visitor {
 
   function visitEnumConstantSequence(index: number): number {
     console.log("Visiting enum-constant-sequence\tNext Token:\t", tokens[index + 1]?.text);
-    while (index < tokens.length && tokens[index + 1]?.text !== FPP.Operators.RBRACE) {
-      index = visitEnumConstantDef(++index);
+    let vaildNext = true;
+    while (++index < tokens.length && tokens[index]?.text !== FPP.Operators.RBRACE) {
+      if (!vaildNext && tokens[index - 1].line === tokens[index].line) {
+        console.log("Invaild Enum Sequence. Expected ',' or newline.");
+        continue;
+      }
+      index = visitEnumConstantDef(index);
+      if (tokens[index + 1]?.text === FPP.Operators.COMMA) {
+        index++;
+        vaildNext = true;
+      } else {
+        vaildNext = false;
+      }
     }
     currentScope.pop();
     return index + 1;
@@ -576,7 +607,6 @@ export module Visitor {
           index = visitPortInstanceSpec(index);
           break;
         case FPP.Keywords.command:
-        case FPP.Keywords.event:
         case FPP.Keywords.text:
         case FPP.Keywords.time:
           index = visitPortInstanceSpec(index);
@@ -615,7 +645,7 @@ export module Visitor {
 
     // List of Param identifiers
   function visitParamList(index: number): number {
-    if (index <= (index = visitToken(index, FPP.Operators.LPAREN, true))) {
+    if (index === (index = visitToken(index, FPP.Operators.LPAREN, true))) {
       console.log("Visiting Formal Parameter List");
       let vaildNext = true;
       if (++index < tokens.length) {
@@ -694,4 +724,3 @@ export module Visitor {
 function contains(arg0: string) {
   throw new Error("Function not implemented.");
 }
-
