@@ -430,7 +430,41 @@ export module Visitor {
   // param identifier : type-name [ default expression ] [ id expression ] [ set opcode expression ] [ save opcode expression ]
   function visitParamSpec(index: number): number {
     console.log("Visiting Parameter Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    // TODO
+    if (tokens[index]?.text === FPP.Keywords.param) {
+      index = visitIdentifier(++index, FPP.KeywordTokensMap.PARAM, [FPP.TokenType.DECLARATION]);
+      index = visitType(++index);
+      if (index < (index = visitToken(++index, FPP.Keywords.default, true))) {
+        if (index >= (index = visitExpression(++index))) {
+          console.log("Invalid default expression\tCurrent Token:\t", tokens[index]?.text);
+        }
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.id, true))) {
+        if (index >= (index = visitExpression(++index))) {
+          console.log("Invalid id expression\tCurrent Token:\t", tokens[index]?.text);
+        }
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.set, true))) {
+        ParamSpecSet: {
+          if (index < (index = visitToken(++index, FPP.Keywords.opcode, true))) {
+            if (index >= (index = visitExpression(++index))) {
+              break ParamSpecSet;
+            }
+          }
+          console.log("Invalid set opcode expression\tCurrent Token:\t", tokens[index]?.text);
+        }
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.save, true))) {
+        ParamSpecsave: {
+          if (index < (index = visitToken(++index, FPP.Keywords.opcode, true))) {
+            if (index >= (index = visitExpression(++index))) {
+              break ParamSpecsave;
+            }
+          }
+          console.log("Invalid save opcode expression\tCurrent Token:\t", tokens[index]?.text);
+        }
+      }
+      console.log("Leaving Parameter Specifier");
+    }
     return index;
   }
 
@@ -487,14 +521,79 @@ export module Visitor {
   // [ low { telemetry-limit-sequence } ] [ high { telemetry-limit-sequence } ]
   function visitTelemetrySpec(index: number): number {
     console.log("Visiting Telemetry Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    // TODO
+    if (tokens[index]?.text === FPP.Keywords.telemetry) {
+      index = visitIdentifier(++index, FPP.KeywordTokensMap.TOPOLOGY, [FPP.TokenType.DECLARATION]);
+      if (tokens[++index]?.text !== FPP.Operators.COLON) {
+        console.log("Invaild Telemetry. Expected ':' Found:\t", tokens[index]?.text);
+      }
+      index = visitType(++index);
+      if (index < (index = visitToken(++index, FPP.Keywords.id, true))) {
+        if (index >= (index = visitExpression(++index))) {
+          console.log("Invalid id expression\tCurrent Token:\t", tokens[index]?.text);
+        }
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.update, true))) {
+        checkUpdate: {
+          if (index < (index = visitToken(++index, FPP.Keywords.always, true))) {
+            break checkUpdate;
+          } else if (index < (index = visitToken(++index, FPP.Keywords.on, true))) {
+            if (index < (index = visitToken(++index, FPP.Keywords.change, true))) {
+              break checkUpdate;
+            }
+          }
+          console.log("Invalid update modifers\tCurrent Token:\t", tokens[index]?.text);
+        }
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.format, true))) {
+        index = visitString(++index);
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.low, true))) {
+        index = telemetrySequence(++index);
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.high, true))) {
+        index = telemetrySequence(++index);
+      }
+    }
     return index;
   }
 
   // event identifier [ ( param-list ) ] severity severity [ id expression ] format string-literal [ throttle expression ]
   function visitEventSpec(index: number): number {
     console.log("Visiting Event Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    // TODO
+    if (tokens[index]?.text === FPP.Keywords.event) {
+      index = visitIdentifier(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
+      index = visitParamList(++index);
+      if (index < (index = visitToken(++index, FPP.Keywords.severity, true))) {
+        checkSeverity: {
+          if (index < (index = visitToken(++index, [FPP.Keywords.activity, FPP.Keywords.warning], true))) {
+            if (index < (index = visitToken(++index, [FPP.Keywords.high, FPP.Keywords.low], true))) {
+              break checkSeverity;
+            }
+          } else if (index < (index = visitToken(++index, [FPP.Keywords.command, FPP.Keywords.diagnostic, FPP.Keywords.fatal], true))) {
+              break checkSeverity;
+          }
+          console.log("Invaild Severity");
+        }
+      } else {
+        console.log("Expected 'severity'.\tFound:\t", tokens[index]?.text);
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.id, true))) {
+        if (index >= (index = visitExpression(++index))) {
+          console.log("Invalid id expression\tCurrent Token:\t", tokens[index]?.text);
+        }
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.format, true))) {
+        index = visitString(++index);
+      } else {
+        console.log("Expected 'format'.\tFound:\t", tokens[index]?.text);
+      }
+      if (index < (index = visitToken(++index, FPP.Keywords.throttle, true))) {
+        if (index >= (index = visitExpression(++index))) {
+          console.log("Invalid throttle expression\tCurrent Token:\t", tokens[index]?.text);
+        }
+      }
+      console.log("Leaving Event Specifier");
+    }
     return index;
   }
 
@@ -502,9 +601,7 @@ export module Visitor {
   function visitIncludeSpec(index: number): number {
     console.log("Visiting Include Specifier\tNext Token:\t", tokens[index + 1]?.text);
     if (tokens[index]?.text === FPP.Keywords.include) {
-      if (tokens[++index].tokenType !== FPP.TokenType.STRING) {
-        console.log("Notice: Expected String\t\tFound Token:\t", tokens[index--]?.text);
-      }
+      index = visitString(++index);
     }
     return index;
   }
@@ -645,7 +742,7 @@ export module Visitor {
 
     // List of Param identifiers
   function visitParamList(index: number): number {
-    if (index === (index = visitToken(index, FPP.Operators.LPAREN, true))) {
+    if (tokens[index]?.text === FPP.Operators.LPAREN) {
       console.log("Visiting Formal Parameter List");
       let vaildNext = true;
       if (++index < tokens.length) {
@@ -671,6 +768,39 @@ export module Visitor {
         } while(true);
       }
       console.log("Invaild exit of Parameter List\tCurrent Token:", tokens[index]?.text);
+    }
+    return index;
+  }
+
+  function telemetrySequence(index: number): number {
+    if (tokens[index]?.text === FPP.Operators.LBRACE) {
+      console.log("Visiting Telemetry Sequence");
+      let vaildNext = true;
+      if (++index < tokens.length) {
+        do {
+          if (FPP.Operators.RBRACE === tokens[index]?.text) {
+            console.log("Leaving Telemetry Sequence");
+            return index;
+          } else if (!vaildNext && tokens[index - 1].line === tokens[index].line) {
+              console.log("Invaild Telemetry Sequence\tCurrent Token:", tokens[index]?.text);
+              return index;
+          }
+          telemetryLimit: {
+            if (index === (index = visitToken(index, [FPP.Keywords.red, FPP.Keywords.yellow, FPP.Keywords.orange], true))) {
+              if (index >= (index = visitExpression(++index))) {
+                break telemetryLimit;
+              }
+            }
+            console.log("Invaild telemetry limit.\tCurrent Token: ", tokens[index]?.text);
+          }
+          if (FPP.Operators.COMMA === tokens[index]?.text) {
+            index++;
+            vaildNext = true;
+          } else {
+            vaildNext = false;
+          }
+        } while(true);
+      }
     }
     return index;
   }
