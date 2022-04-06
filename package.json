@@ -56,7 +56,7 @@
       },
       {
         "id": "port",
-        "superType": "method",
+        "superType": "variable",
         "description": "FPP endpoint of a connection between components."
       },
       {
