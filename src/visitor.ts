@@ -455,7 +455,7 @@ export module Visitor {
       index = visitIdentifierDef(++index, FPP.KeywordTokensMap.STRUCT, [FPP.TokenType.DECLARATION]);
       index = visitStructMemberSequence(++index);
       if (tokens[index + 1]?.text === FPP.Keywords.default) {
-        index = visitExpression(index + 2);
+        index = visitStructElementSequence(index + 2);
       }
     } else {
       // Error
@@ -1106,6 +1106,15 @@ export module Visitor {
       }
       console.log("Invaild exit of Struct Member Sequence\tCurrent Token:", tokens[index]?.text);
     } 
+    return index;
+  }
+
+  function visitStructElementSequence(index: number): number {
+    if (tokens[index]?.text === FPP.Operators.LBRACE) {
+      console.log("Visiting Struct Element Sequence");
+
+
+    }
     return index;
   }
 
