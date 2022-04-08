@@ -466,8 +466,16 @@ export module Visitor {
   // topology identifier { topology-member-sequence }
   function visitTopologyDef(index: number): number {
     console.log("Visiting Topology Definition\tNext Token:\t", tokens[index + 1]?.text);
-    FPP.KeywordTokensMap.TOPOLOGY;
-    // TODO
+    
+    if (tokens[index]?.text ===FPP.Keywords.topology) {
+      index = visitIdentifierDef(++index, FPP.KeywordTokensMap.TOPOLOGY, [FPP.TokenType.DECLARATION]);
+      if (tokens[++index].text === FPP.Operators.LBRACE) {
+        index = visitTopologyMemberSequence(++index);
+      } else {
+        // Error
+      }
+    }
+
     return index;
   }
 
@@ -835,6 +843,26 @@ export module Visitor {
     return index;
   }
 
+  // [private] instance qual-indent
+  function visitComponentInstanceSpec(index: number): number {
+    // TODO
+    return index;
+  }
+
+  // direct graph specifier: connections identifier {connection-sequence}
+  // pattern graph specifier: pattern-kind connections instance qual-ident [{instance-sequence}]
+  function visitConnectionGraphSpec(index: number): number {
+    // TODO
+    return index;
+  }
+
+  // import qual-ident
+  function visitImportSpec(index: number): number {
+    // TODO
+    return index;
+  }
+
+
   //---------------------------------------------------------------------------\\
   //------------------------------\\ V I S I T //------------------------------\\
   //--------------------------\\ S E Q U E N C E S //--------------------------\\
@@ -1054,9 +1082,9 @@ export module Visitor {
         case FPP.Keywords.struct:
           index = visitStructDef(index);
         break;
-        case FPP.Keywords.topology:
-          index = visitTopologyDef(index);
-        break;
+        // case FPP.Keywords.topology:
+        //   index = visitTopologyDef(index);
+        // break;
         case FPP.Keywords.locate:
           index = visitLocateSpec(index);
         break;
@@ -1115,6 +1143,43 @@ export module Visitor {
 
 
     }
+    return index;
+  }
+
+  function visitTopologyMemberSequence(index: number): number {
+    console.log("Visiting Topology Member Sequence\tCurrentToken:\t", tokens[index].text);
+
+    while (index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
+      switch (tokens[index].text) {
+        // component instance specifier
+        case FPP.Keywords.private:
+        case FPP.Keywords.instance:
+          index = visitComponentInstanceSpec(index);
+          break;
+        // connection graph specifier
+        case FPP.Keywords.connections:
+        case FPP.Keywords.command:
+        case FPP.Keywords.event:
+        case FPP.Keywords.health:
+        case FPP.Keywords.param:
+        case FPP.Keywords.telemetry:
+        case FPP.Keywords.time:
+          index = visitConnectionGraphSpec(index);
+          break;
+        // topology import specifier
+        case FPP.Keywords.import:
+          index = visitImportSpec(index);
+          break;
+        // include specifier
+        case FPP.Keywords.include:
+          index = visitIncludeSpec(index);
+          break;
+        default:
+          //Error
+          index++;      
+      }
+    }
+
     return index;
   }
 
