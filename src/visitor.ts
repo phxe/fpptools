@@ -423,8 +423,14 @@ export module Visitor {
   // module identifier { module-member-sequence }
   function visitModuleDef(index: number): number {
     console.log("Visiting Module Definition\tNext Token:\t", tokens[index + 1]?.text);
-    FPP.KeywordTokensMap.MODULE;
-    // TODO
+    if (tokens[index]?.text === FPP.Keywords.module) {
+      index = visitIdentifierDef(++index, FPP.KeywordTokensMap.MODULE, [FPP.TokenType.DECLARATION]);
+      if (tokens[++index].text === FPP.Operators.LBRACE) {
+        index = visitModuleMemberSequence(++index);
+      } else {
+        // Error
+      }
+    }
     return index;
   }
 
@@ -445,10 +451,18 @@ export module Visitor {
   // struct identifier { struct-type-member-sequence } [ default expression ]
   function visitStructDef(index: number): number {
     console.log("Visiting Struct Definition\tNext Token:\t", tokens[index + 1]?.text);
-    FPP.KeywordTokensMap.STRUCT;
-    // TODO
+    if (tokens[index]?.text === FPP.Keywords.struct) {
+      index = visitIdentifierDef(++index, FPP.KeywordTokensMap.STRUCT, [FPP.TokenType.DECLARATION]);
+      index = visitStructMemberSequence(++index);
+      if (tokens[index + 1]?.text === FPP.Keywords.default) {
+        index = visitExpression(index + 2);
+      }
+    } else {
+      // Error
+    }
     return index;
   }
+
   // topology identifier { topology-member-sequence }
   function visitTopologyDef(index: number): number {
     console.log("Visiting Topology Definition\tNext Token:\t", tokens[index + 1]?.text);
@@ -484,6 +498,35 @@ export module Visitor {
       index = visitType(++index);
     }
     console.log("Exiting Parameter identifier");
+    return index;
+  }
+
+  // identifier : [ [ expression ] ] type-name [ format string-literal ]
+  function visitStructTypeMember(index: number): number {
+    console.log("Visiting Struct Type Member\tCurrent Token:\t", tokens[index]?.text);
+    if (Parser.isIdentifier(tokens[index].text)) {
+      console.log("New Identifier\t\t\tCurrent Token:\t", tokens[index].text);
+      tokens[index].tokenType = FPP.KeywordTokensMap.PARAM;
+      tokens[index].tokenModifiers = [FPP.TokenType.DECLARATION, FPP.TokenType.PARAMETER];
+    } else {
+      console.log("Invalid Identifier\t\tCurrent Token:\t", tokens[index].text);
+      // Error
+      let thisLine = tokens[index].line;
+      while (tokens[index++].line === thisLine) {}
+      return index;
+    }
+    index = visitToken(++index, FPP.Operators.COLON, true);
+    if (tokens[index + 1]?.text === FPP.Operators.LBRACKET) {
+      index = visitExpression(index + 2);
+      if (tokens[index + 1]?.text !== FPP.Operators.RBRACKET) {
+        console.log("Invaild closed expression");
+      }
+      index++;
+    }
+    index = visitType(++index);
+    if (tokens[index + 1]?.text === FPP.Keywords.format) {
+      index = visitString(index + 2);
+    }
     return index;
   }
 
@@ -688,6 +731,8 @@ export module Visitor {
       if (index < (index = visitToken(++index, FPP.Keywords.high, true))) {
         index = telemetrySequence(++index);
       }
+    } else {
+      // Error
     }
     return index;
   }
@@ -780,6 +825,13 @@ export module Visitor {
         console.log("Invaild internal port defition. Expected 'port'. Found ", tokens[index]?.text);
       }
     }
+    return index;
+  }
+
+  // locate (instance|component|constant|port|topology|type) qual-ident at string-literal
+  function visitLocateSpec(index: number): number {
+    console.log("Visiting Location Specifier\tCurrent Token:\t", tokens[index].text);
+    // TODO
     return index;
   }
 
@@ -975,6 +1027,85 @@ export module Visitor {
         index++;
       }
     }
+    return index;
+  }
+
+  function visitModuleMemberSequence(index: number): number {
+    console.log("Visiting module-member-seq\tCurrent Token:\t", tokens[index].text);
+    while (index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
+      switch (tokens[index].text) {
+        case FPP.Keywords.active:
+        case FPP.Keywords.passive:
+        case FPP.Keywords.queued:
+          index = visitComponentDef(index);
+        break;
+        case FPP.Keywords.instance:
+          index = visitInstanceDef(index);
+        break;
+        case FPP.Keywords.constant:
+          index = visitConstantDef(index);
+        break;
+        case FPP.Keywords.module:
+          index = visitModuleDef(index);
+        break;
+        case FPP.Keywords.port:
+          index = visitPortDef(index);
+        break;
+        case FPP.Keywords.struct:
+          index = visitStructDef(index);
+        break;
+        case FPP.Keywords.topology:
+          index = visitTopologyDef(index);
+        break;
+        case FPP.Keywords.locate:
+          index = visitLocateSpec(index);
+        break;
+        case FPP.Keywords.type:
+          index = visitType(index);
+        break;
+        case FPP.Keywords.array:
+          index = visitArrayDef(index);
+        break;
+        case FPP.Keywords.enum:
+          index = visitEnumDef(index);
+        break;
+        case FPP.Keywords.include:
+          index = visitIncludeSpec(index);
+        break;
+        default:
+          //Error
+          index++;
+      }
+    }
+    return index;
+  }
+
+  function visitStructMemberSequence(index: number): number {
+    if (tokens[index]?.text === FPP.Operators.LBRACE) {
+      console.log("Visiting Struct Type Member Sequence");
+      let vaildNext = true;
+      if (++index < tokens.length) {
+        do {
+          if (FPP.Operators.RBRACE === tokens[index]?.text) {
+            console.log("Leaving Struct Member Sequence");
+            return index;
+          } else if (!vaildNext && tokens[index - 1].line === tokens[index].line) {
+            console.log("Invaild Struct Member Sequence\tCurrent Token:", tokens[index]?.text);
+            return index;
+          }
+          if (index >= (index = visitStructTypeMember(index)) || ++index >= tokens.length) {
+            break;
+          }
+          if (FPP.Operators.COMMA === tokens[index]?.text) {
+            index++;
+            vaildNext = true;
+          } else {
+            vaildNext = false;
+          }
+        } while (true);
+      }
+      console.log("Invaild exit of Struct Member Sequence\tCurrent Token:", tokens[index]?.text);
+    } 
     return index;
   }
 
