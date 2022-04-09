@@ -3,6 +3,10 @@ import { Diagnostics } from "./diagnostics";
 import { Parser, tokens } from "./parser";
 
 const identifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
+// List of declared topologies. Used to check qual-ident for topology import specifiers
+const topologyIdentifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
+// List of component instances. Used to check qual-ident for component instance specifiers
+const componentInstanceIdentifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
 const currentScope: string[] = [""];
 
 export module Visitor {
@@ -343,6 +347,8 @@ export module Visitor {
   function visitInstanceDef(index: number): number {
     console.log("Visiting Instance Definition\tNext Token:\t", tokens[index + 1]?.text);
     index = visitIdentifierDef(++index, FPP.KeywordTokensMap.INSTANCE, [FPP.TokenType.DECLARATION]);
+    // Add to list of component instances. Used to check qual-ident for component instance specifiers
+    componentInstanceIdentifiers.set(tokens[index].text, [tokens[index].text, FPP.TokenType.INSTANCE, []]);
     index = visitToken(++index, FPP.Operators.COLON, true);
     index = visitQualifiedIdentifier(++index);
     index = visitToken(++index, FPP.Keywords.base, true);
@@ -492,14 +498,20 @@ export module Visitor {
   // topology identifier { topology-member-sequence }
   function visitTopologyDef(index: number): number {
     console.log("Visiting Topology Definition\tNext Token:\t", tokens[index + 1]?.text);
-    if (tokens[index]?.text === FPP.Keywords.topology) {
+    
+    if (identifiers.has(tokens[index].text)) {
+      // Error. Identifier already exists
+    } else {
       index = visitIdentifierDef(++index, FPP.KeywordTokensMap.TOPOLOGY, [FPP.TokenType.DECLARATION]);
-      if (tokens[++index].text === FPP.Operators.LBRACE) {
-        index = visitTopologyMemberSequence(++index);
-      } else {
-        // Error
-      }
+      // Add to list of declared topologies. Used to check qual-ident for topology import specifiers
+      topologyIdentifiers.set(tokens[index].text, [tokens[index].text, FPP.TokenType.TOPOLOGY, []]);
     }
+    if (index < (index = visitToken(++index, FPP.Operators.LBRACE, true))) {
+      index = visitTopologyMemberSequence(index);
+    } else {
+      // Error
+    }
+
     return index;
   }
 
@@ -880,14 +892,23 @@ export module Visitor {
   }
 
   // [private] instance qual-indent
+  // Note: qual-ident must refer to a component instance
   function visitComponentInstanceSpec(index: number): number {
     console.log("Visiting Component Instance Specifier\tCurrent Token:\t", tokens[index].text);
-    // TODO
+    
+    if (componentInstanceIdentifiers.has(tokens[index + 1].text)) {
+      index = visitQualifiedIdentifier(++index);
+    } else {
+      // Error
+      console.log("Qualified identifier must refer to a component instance");
+    }
+
     return ++index;
   }
 
   // direct graph specifier: connections identifier {connection-sequence}
   // pattern graph specifier: pattern-kind connections instance qual-ident [{instance-sequence}]
+  // Note: qual-ident must refer to a component instance that is available in the enclosing topology
   function visitConnectionGraphSpec(index: number): number {
     console.log("Visiting Connection Graph Specifier\tCurrent Token:\t", tokens[index].text);
     // TODO
@@ -895,9 +916,17 @@ export module Visitor {
   }
 
   // import qual-ident
+  // Note: qual-ident must refer to a topology definition
   function visitImportSpec(index: number): number {
     console.log("Visiting Import Specifier\tCurrent Token:\t", tokens[index].text);
-    // TODO
+    
+    if (topologyIdentifiers.has(tokens[index + 1].text)) {
+      index = visitQualifiedIdentifier(++index);
+    } else {
+      // Error
+      console.log("Qualified identifier must refer to a topology definition");
+    }
+
     return ++index;
   }
 
@@ -1190,6 +1219,11 @@ export module Visitor {
       switch (tokens[index].text) {
         // component instance specifier
         case FPP.Keywords.private:
+          if (tokens[++index].text === FPP.Keywords.instance) {
+            index = visitComponentInstanceSpec(index);
+          } else {
+            // Error. Expected keyword instance
+          }
         case FPP.Keywords.instance:
           index = visitComponentInstanceSpec(index);
           break;
@@ -1211,9 +1245,6 @@ export module Visitor {
         case FPP.Keywords.include:
           index = visitIncludeSpec(index);
           break;
-        default:
-          //Error
-          index++;      
       }
     }
     return index;
