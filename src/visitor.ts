@@ -415,7 +415,7 @@ export module Visitor {
     if (tokens[index + 1]?.text === FPP.Operators.COLON) {
       index = visitType(index + 2);
     }
-    if (index < (index = visitToken(++index, FPP.Operators.LBRACE, true))) {
+    if (index !== (index = visitToken(++index, FPP.Operators.LBRACE, false))) {
       index = visitEnumConstantSequence(index);
       if (tokens[index + 1]?.text === FPP.Keywords.default) {
         index = visitExpression(index + 2);
@@ -683,6 +683,7 @@ export module Visitor {
   function visitPortInstanceSpec(index: number): number {
     console.log("Visiting Port Instance Specifier\tCurrent Token:\t", tokens[index].text);
     let generalPortKind = false;
+    let check = index;
     switch (tokens[index].text) {
       case FPP.Keywords.async:
       case FPP.Keywords.guarded:
@@ -710,6 +711,12 @@ export module Visitor {
       default:
         // Error
         console.log("Error - invaild port kind");
+        return check + 1;
+    }
+    if (check >= index) {
+      // Error
+      console.log("Error - invalid port kind");
+      return check + 1;
     }
     index = visitToken(++index, FPP.Keywords.port, true);
     index = visitIdentifierDef(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
@@ -1214,8 +1221,9 @@ export module Visitor {
   }
 
   function visitTopologyMemberSequence(index: number): number {
-    console.log("Visiting Topology Member Sequence\tCurrentToken:\t", tokens[index].text);
-    while (index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
+    console.log("Visiting Topology Member Sequence\tNext Token:\t", tokens[++index].text);
+
+    while (++index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
       switch (tokens[index].text) {
         // component instance specifier
         case FPP.Keywords.private:
