@@ -41,6 +41,7 @@ export const TokenType = {
   NUMBER: "number",
   REGEXP: "regexp",
   OPERATOR: "operator",
+  CONNECTIONS: "connections",
   // Modifier
   DECLARATION: "declaration",
   DEFINITION: "definition",
@@ -136,6 +137,7 @@ export const KeywordTokens = {
   TYPE: "type",
   TOPOLOGY: "topology",
   PARAM: "param",
+  CONNECTIONS: "connections",
 } as const;
 
 // FPP Token to Semantic Token Type
@@ -152,6 +154,7 @@ export const KeywordTokensMap = {
   TYPE: TokenType.TYPE,
   TOPOLOGY: TokenType.TOPOLOGY,
   PARAM: TokenType.TYPEPARAMETER,
+  CONNECTIONS: TokenType.CONNECTIONS,
 };
 
 // FPP Modifiers

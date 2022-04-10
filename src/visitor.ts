@@ -3,10 +3,6 @@ import { Diagnostics } from "./diagnostics";
 import { Parser, tokens } from "./parser";
 
 const identifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
-// List of declared topologies. Used to check qual-ident for topology import specifiers
-const topologyIdentifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
-// List of component instances. Used to check qual-ident for component instance specifiers
-const componentInstanceIdentifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
 const currentScope: string[] = [""];
 
 export module Visitor {
@@ -347,8 +343,6 @@ export module Visitor {
   function visitInstanceDef(index: number): number {
     console.log("Visiting Instance Definition\tNext Token:\t", tokens[index + 1]?.text);
     index = visitIdentifierDef(++index, FPP.KeywordTokensMap.INSTANCE, [FPP.TokenType.DECLARATION]);
-    // Add to list of component instances. Used to check qual-ident for component instance specifiers
-    componentInstanceIdentifiers.set(tokens[index].text, [tokens[index].text, FPP.TokenType.INSTANCE, []]);
     index = visitToken(++index, FPP.Operators.COLON, true);
     index = visitQualifiedIdentifier(++index);
     index = visitToken(++index, FPP.Keywords.base, true);
@@ -503,8 +497,6 @@ export module Visitor {
       // Error. Identifier already exists
     } else {
       index = visitIdentifierDef(++index, FPP.KeywordTokensMap.TOPOLOGY, [FPP.TokenType.DECLARATION]);
-      // Add to list of declared topologies. Used to check qual-ident for topology import specifiers
-      topologyIdentifiers.set(tokens[index].text, [tokens[index].text, FPP.TokenType.TOPOLOGY, []]);
     }
     if (index < (index = visitToken(++index, FPP.Operators.LBRACE, true))) {
       index = visitTopologyMemberSequence(index);
@@ -903,14 +895,16 @@ export module Visitor {
   function visitComponentInstanceSpec(index: number): number {
     console.log("Visiting Component Instance Specifier\tCurrent Token:\t", tokens[index].text);
     
-    if (componentInstanceIdentifiers.has(tokens[index + 1].text)) {
+    if (tokens[index]?.text !== FPP.Keywords.instance) {
+      // Error
+    }
+    if (identifiers.has(tokens[index + 1].text)) {
       index = visitQualifiedIdentifier(++index);
     } else {
-      // Error
-      console.log("Qualified identifier must refer to a component instance");
+      index = visitIdentifierDef(++index, FPP.KeywordTokensMap.INSTANCE, [FPP.TokenType.DECLARATION]);
     }
 
-    return ++index;
+    return index;
   }
 
   // direct graph specifier: connections identifier {connection-sequence}
@@ -918,8 +912,41 @@ export module Visitor {
   // Note: qual-ident must refer to a component instance that is available in the enclosing topology
   function visitConnectionGraphSpec(index: number): number {
     console.log("Visiting Connection Graph Specifier\tCurrent Token:\t", tokens[index].text);
-    // TODO
-    return ++index;
+
+    switch (tokens[index].text) {
+      case FPP.Keywords.connections: 
+        index = visitIdentifierDef(++index, FPP.KeywordTokensMap.CONNECTIONS, [FPP.TokenType.DECLARATION]);
+        if (index === (index = visitConnectionSequence(index))) {
+          // Error
+          return index;
+        }
+        break;
+      case FPP.Keywords.command:
+      case FPP.Keywords.event:
+      case FPP.Keywords.health:
+      case FPP.Keywords.param:
+      case FPP.Keywords.telemetry:
+      case FPP.Keywords.time:
+        console.log("Found pattern-kind\tCurrent Token:\t", tokens[index].text);
+        if (index === (index = visitToken(++index, FPP.Keywords.connections, true))) {
+          // Error
+          return index;
+        }
+        if (index === (index = visitToken(++index, FPP.Keywords.instance, true))) {
+          // Error
+          return index;
+        }
+        index = visitQualifiedIdentifier(++index);
+        if (index < (index = visitToken(++index, FPP.Operators.LBRACE, false))) {
+          index = visitInstanceSequence(++index);
+        }
+        break;
+      default:
+        // Error
+        return index;
+    }
+  
+    return index;
   }
 
   // import qual-ident
@@ -927,7 +954,10 @@ export module Visitor {
   function visitImportSpec(index: number): number {
     console.log("Visiting Import Specifier\tCurrent Token:\t", tokens[index].text);
     
-    if (topologyIdentifiers.has(tokens[index + 1].text)) {
+    if (tokens[index]?.text !== FPP.Keywords.import) {
+      // Error
+    }
+    if (identifiers.has(tokens[index + 1].text)) {
       index = visitQualifiedIdentifier(++index);
     } else {
       // Error
@@ -1255,6 +1285,45 @@ export module Visitor {
           break;
       }
     }
+    return index;
+  }
+
+  // For direct graph specifiers
+  function visitConnectionSequence(index: number): number {
+    console.log("Visiting Connection Sequence\tNext Token:\t", tokens[++index].text);
+
+    while (++index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
+      // port-instance-id [ [ expression ] ] -> port-instance-id [ [ expression ] ]
+      // port instance id: qual-ident.identifier
+      // qual-ident of port instance id must refer to a component instance
+      // identifier must refer to a port instance specifier
+
+      if (identifiers.has(tokens[index].text)) {
+        index = visitQualifiedIdentifier(++index); 
+        index = visitToken(++index, FPP.Operators.DOT, true);
+        index = visitIdentifierDef(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
+        index = visitToken(++index, FPP.Operators.RARROW, true);
+        if (identifiers.has(tokens[++index].text)) {
+          index = visitQualifiedIdentifier(index);
+          index = visitToken(++index, FPP.Operators.DOT, true);
+          index = visitIdentifierDef(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
+        }
+      } else {
+        // Error
+      } 
+       
+    
+    }
+    
+    return index;
+  }
+
+  // For pattern graph specifiers 
+  function visitInstanceSequence(index: number): number {
+    console.log("Visiting Instance Sequence\tNext Token:\t", tokens[++index].text);
+
+    // TO DO
+
     return index;
   }
 }
