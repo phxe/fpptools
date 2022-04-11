@@ -18,6 +18,13 @@ export module Diagnostics {
         create(errString, startPosition, endPosition, token.line, severity);
     }
 
+    // convenience function that creates a diagnostic for an entire line
+    export function createFromLine(errString: string, line: number, severity: vscode.DiagnosticSeverity) {
+        var startPosition = new vscode.Position(line, 0);
+        var endPosition = new vscode.Position(line, Number.MAX_VALUE);
+        create(errString, startPosition, endPosition, line, severity);
+    }
+
     // creates a new diagnostic for the currently opened file
     export function create(errString: string, startPosition: vscode.Position, endPosition: vscode.Position, lineNum: number, severity: vscode.DiagnosticSeverity) {
         if (vscode.window.activeTextEditor !== undefined) {
