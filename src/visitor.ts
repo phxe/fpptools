@@ -3,53 +3,39 @@ import { Diagnostics } from "./diagnostics";
 import { Parser, tokens } from "./parser";
 
 const identifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
-const currentScope: string[] = [""];
+const currentScope: [string, FPP.TokenType][] = [["", FPP.TokenType.NIL]];
 
 // TODO: Ignore comments, annotations, and the new line suppressor in visitors
-// const currentScope = new Map<string, FPP.TokenType>();
 
 export module Visitor {
-  export function visitDocument() {
-    if (tokens.length === 0) {
-      return -1;
-    }
+  export interface VisitedToken {
+    line: number;
+    startCharacter: number;
+    length: number;
+    tokenType: FPP.TokenType;
+    text: string;
+    tokenModifiers: FPP.TokenType[];
+  }
+
+  export function visitDocument(): VisitedToken[] {
+    let visitedTokens: VisitedToken[] = [];
     let index = 0;
     while (index < tokens.length) {
+      // prettier-ignore
       switch (tokens[index].text) {
-        case FPP.Keywords.array:
-          index = visitArrayDef(index);
-          break;
+        case FPP.Keywords.array:    index = visitArrayDef(index); break;
         case FPP.Keywords.active:
         case FPP.Keywords.passive:
-        case FPP.Keywords.queued:
-          index = visitComponentDef(index);
-          break;
-        case FPP.Keywords.constant:
-          index = visitConstantDef(index);
-          break;
-        case FPP.Keywords.instance:
-          index = visitInstanceDef(index);
-          break;
-        case FPP.Keywords.enum:
-          index = visitEnumDef(index);
-          break;
-        case FPP.Keywords.module:
-          index = visitModuleDef(index);
-          break;
-        case FPP.Keywords.port:
-          index = visitPortDef(index);
-          break;
-        case FPP.Keywords.struct:
-          index = visitStructDef(index);
-          break;
-        case FPP.Keywords.type:
-          index = visitTypeDef(index);
-          break;
-        case FPP.Keywords.topology:
-          index = visitTopologyDef(index);
-          break;
-        case FPP.Operators.BSLASH:
-          break;
+        case FPP.Keywords.queued:   index = visitComponentDef(index); break;
+        case FPP.Keywords.constant: index = visitConstantDef(index); break;
+        case FPP.Keywords.instance: index = visitInstanceDef(index); break;
+        case FPP.Keywords.enum:     index = visitEnumDef(index); break;
+        case FPP.Keywords.module:   index = visitModuleDef(index); break;
+        case FPP.Keywords.port:     index = visitPortDef(index); break;
+        case FPP.Keywords.struct:   index = visitStructDef(index); break;
+        case FPP.Keywords.type:     index = visitTypeDef(index); break;
+        case FPP.Keywords.topology: index = visitTopologyDef(index); break;
+        case FPP.Operators.BSLASH: break;
         default:
           switch (tokens[index].tokenType) {
             case FPP.TokenType.STRING:
@@ -70,6 +56,7 @@ export module Visitor {
       index++;
     }
     identifiers.clear();
+    return visitedTokens;
   }
 
   function getNextLineIndex(index: number): number {
@@ -101,13 +88,6 @@ export module Visitor {
   //---------------------------------------------------------------------------\\
 
   function visitToken(index: number, expectedToken: any, required: boolean = false): number {
-    // if (index - 1 === (index = visitNewlineSupression(index))) {
-    //   if (required) {
-    //     // Error
-    //     Diagnostics.createFromToken("Sample Error 2: " + tokens[index].text, tokens[index], 0);
-    //   }
-    //   return index;
-    // }
     index = ignoreNonsemanticTokens(index);
     console.log("Expecting Token(s):\t", expectedToken, "\tCurrent Token:\t", tokens[index].text);
     if (expectedToken.includes(tokens[index].text)) {
@@ -132,16 +112,10 @@ export module Visitor {
       } else {
         return index - 1;
       }
-      return index;
     }
   }
 
   function visitType(index: number): number {
-    // if (index - 1 === (index = visitNewlineSupression(index))) {
-    //   // Error
-    //   Diagnostics.createFromToken("Sample Error 4: " + tokens[index].text, tokens[index], 0);
-    //   return index;
-    // }
     index = ignoreNonsemanticTokens(index);
     console.log("Visiting Type\t\t\tCurrent Token:\t", tokens[index].text);
     if (FPP.isMember(tokens[index].text, FPP.Types)) {
@@ -155,11 +129,6 @@ export module Visitor {
   }
 
   function visitString(index: number): number {
-    // if (index - 1 === (index = visitNewlineSupression(index))) {
-    //   // Error
-    //   Diagnostics.createFromToken("Sample Error 6: " + tokens[index].text, tokens[index], 0);
-    //   return index;
-    // }
     index = ignoreNonsemanticTokens(index);
     console.log("Visiting String\t\t\tCurrent Token:\t", tokens[index].text);
     if (tokens[index].tokenType !== FPP.TokenType.STRING) {
@@ -168,22 +137,6 @@ export module Visitor {
     }
     return index;
   }
-
-  // function visitNewlineSupression(index: number): number {
-  //   // if (
-  //   //   tokens[index - 1]?.line !== tokens[index].line &&
-  //   //   !FPP.isValue(tokens[index - 1].text, FPP.SuppressionOperators)
-  //   // ) {
-  //   //   // Error
-  //   //   Diagnostics.createFromToken("Sample Error 8: " + tokens[index].text, tokens[index], 0);
-  //   //   return index - 1;
-  //   // }
-  //   while (tokens[index].text === FPP.SuppressionOperators.BSLASH) {
-  //     console.log("Skipping Newline Suppression\tCurrent Token:\t", tokens[index].text);
-  //     index++;
-  //   }
-  //   return index;
-  // }
 
   //------------------------\\ E X P R E S S I O N S //------------------------\\
 
@@ -202,6 +155,7 @@ export module Visitor {
         if (Parser.isIdentifier(tokens[index].text)) {
           index = visitIdentifier(index);
         } else if (tokens[index].tokenType === FPP.TokenType.NUMBER) {
+          index++;
         } else {
           // Error
         }
@@ -215,7 +169,7 @@ export module Visitor {
         return visitExpression(++index);
     }
 
-    return index;
+    return index - 1;
   }
 
   function visitParenthesisExpression(index: number): number {
@@ -245,11 +199,6 @@ export module Visitor {
   }
 
   function visitIdentifier(index: number): number {
-    // if (index - 1 === (index = visitNewlineSupression(index))) {
-    //   // Error
-    //   Diagnostics.createFromToken("Sample Error 12: " + tokens[index].text, tokens[index], 0);
-    //   return index;
-    // }
     index = ignoreNonsemanticTokens(index);
     if (identifiers.has(tokens[index].text)) {
       console.log("Identifier Found\t\tCurrent Token:\t", tokens[index].text);
@@ -269,11 +218,6 @@ export module Visitor {
     type: FPP.TokenType,
     modifiers: FPP.TokenType[]
   ): number {
-    // if (index - 1 === (index = visitNewlineSupression(index))) {
-    //   // Error
-    //   Diagnostics.createFromToken("Sample Error 13: " + tokens[index].text, tokens[index], 0);
-    //   return index;
-    // }
     index = ignoreNonsemanticTokens(index);
     tokens[index].tokenType = type;
     tokens[index].tokenModifiers = modifiers.slice();
@@ -287,7 +231,7 @@ export module Visitor {
         if ((i = modifiers.findIndex((mod) => mod === FPP.TokenType.DECLARATION)) !== -1) {
           delete modifiers[i];
           identifiers.set(tokens[index].text, [
-            currentScope[currentScope.length - 1],
+            currentScope[currentScope.length - 1][0],
             type,
             modifiers.slice(),
           ]);
@@ -296,13 +240,13 @@ export module Visitor {
             case FPP.TokenType.COMPONENT:
             case FPP.TokenType.NAMESPACE:
               console.log("New Scope\t\t\tCurrent Token:\t", tokens[index].text);
-              currentScope.push(tokens[index].text);
+              currentScope.push([tokens[index].text, tokens[index].tokenType]);
             default:
               break;
           }
         } else {
           identifiers.set(tokens[index].text, [
-            currentScope[currentScope.length - 1],
+            currentScope[currentScope.length - 1][0],
             type,
             modifiers.slice(),
           ]);
@@ -339,25 +283,6 @@ export module Visitor {
   // array identifier = [ expression ] type-name [ default expression ] [ format string-literal ]
   function visitArrayDef(index: number): number {
     console.log("Visiting Array Definition\tNext Token:\t", tokens[index + 1]?.text);
-    // if (tokens[index]?.text !== FPP.Keywords.array) {
-    //   console.log("Error - expected 'array'");
-    // }
-    // if (Parser.isIdentifier(tokens[++index].text)) {
-    //   if (identifiers.has(tokens[index].text)) {
-    //     console.log("Identifier Found\t\tCurrent Token:\t", tokens[index].text);
-    //     tokens[index].tokenType = identifiers.get(tokens[index].text)?.[0] as FPP.TokenType;
-    //     tokens[index].tokenModifiers = identifiers.get(tokens[index].text)?.[2] as FPP.TokenType[];
-    //   } else {
-    //     console.log("New Identifier\t\t\tCurrent Token:\t", tokens[index].text);
-    //     identifiers.set(tokens[index].text, [tokens[index].text, FPP.TokenType.ENUMMEMBER, []]);
-    //   }
-    // } else {
-    //   console.log("Invalid Identifier\t\tCurrent Token:\t", tokens[index].text);
-    //   // Error
-    //   let thisLine = tokens[index].line;
-    //   while (tokens[index++].line === thisLine) {}
-    //   return index;
-    // }
     index = visitIdentifierDef(++index, FPP.KeywordTokensMap.ARRAY, [FPP.TokenType.DECLARATION]);
     index = visitToken(++index, FPP.Operators.EQ, true);
     index = visitToken(++index, FPP.Operators.LBRACKET, true);
@@ -860,12 +785,14 @@ export module Visitor {
   function visitPortInstanceSpec(index: number): number {
     console.log("Visiting Port Instance Specifier\tCurrent Token:\t", tokens[index].text);
     let generalPortKind = false;
-    let check = index;
     switch (tokens[index].text) {
       case FPP.Keywords.async:
       case FPP.Keywords.guarded:
       case FPP.Keywords.sync:
         index = visitToken(++index, FPP.Keywords.input, true);
+        generalPortKind = true;
+        break;
+      case FPP.Keywords.output:
         generalPortKind = true;
         break;
       case FPP.Keywords.command:
@@ -880,54 +807,33 @@ export module Visitor {
       case FPP.Keywords.time:
         index = visitToken(++index, FPP.Keywords.get, true);
         break;
-      case FPP.Keywords.output:
-        generalPortKind = true;
       case FPP.Keywords.telemetry:
       case FPP.Keywords.event:
         break;
       default:
-        // Error
-        console.log("Error - invalid port kind");
-        return check + 1;
-    }
-    if (check >= index) {
       // Error
-      console.log("Error - invalid port kind");
-      return check + 1;
     }
     index = visitToken(++index, FPP.Keywords.port, true);
     index = visitIdentifierDef(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
     if (generalPortKind) {
       index = visitToken(++index, FPP.Operators.COLON, true);
-      let visited = new Array<number>(5);
-      let done = false;
-      // TODO: Remove while loop
-      while (!done) {
-        index++;
-        switch (tokens[index].text) {
-          case FPP.Keywords.priority:
-            if (!visited[0]) {
-              index = visitExpression(++index);
-            }
-            break;
-          case FPP.Operators.LBRACKET:
-            index = visitExpression(++index);
-            index = visitToken(++index, FPP.Operators.RBRACKET, true);
-            break;
-          case FPP.Keywords.assert:
-          case FPP.Keywords.block:
-          case FPP.Keywords.drop:
-          case FPP.Keywords.serial:
-            break;
-          default:
-            done = true;
-            let a = tokens[index].text;
-            if (identifiers.has(tokens[index].text)) {
-              index = visitQualifiedIdentifier(index);
-            } else {
-              done = true;
-            }
-        }
+      if (lookAhead(index + 1) === FPP.Operators.LBRACKET) {
+        index = visitExpression(++index);
+        index = visitToken(++index, FPP.Operators.RBRACKET, true);
+      }
+      if (lookAhead(index + 1) === FPP.Keywords.serial) {
+        index = ignoreNonsemanticTokens(++index);
+      } else {
+        index = visitQualifiedIdentifier(++index);
+      }
+      if (lookAhead(index + 1) === FPP.Keywords.priority) {
+        index = visitExpression(++index);
+      }
+      switch (lookAhead(index + 1)) {
+        case FPP.Keywords.assert:
+        case FPP.Keywords.block:
+        case FPP.Keywords.drop:
+          index = ignoreNonsemanticTokens(++index);
       }
     }
     return index;

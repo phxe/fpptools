@@ -4,9 +4,9 @@ import { Diagnostics } from "./diagnostics";
 import { Scanner } from "./scanner";
 import { Visitor } from "./visitor";
 
+export const tokens: Parser.ParsedToken[] = [];
 const tokenTypes = new Map<string, number>();
 const tokenModifiers = new Map<string, number>();
-export var tokens: Parser.ParsedToken[] = [];
 
 export const legend = (function () {
   const tokenTypesLegend = [
@@ -17,7 +17,7 @@ export const legend = (function () {
     FPP.TokenType.INSTANCE,
     FPP.TokenType.PORT,
     FPP.TokenType.TOPOLOGY,
-    // Standard (comment unused)
+    // Standard
     FPP.TokenType.NAMESPACE, // For identifiers that declare or reference a namespace, module, or package.
     FPP.TokenType.CLASS, // For identifiers that declare or reference a class type.
     FPP.TokenType.ENUM, // For identifiers that declare or reference an enumeration type.
@@ -45,18 +45,17 @@ export const legend = (function () {
   tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
 
   const tokenModifiersLegend = [
-    // Custom
-    // Standard (comment unused)
+    // Standard
     FPP.TokenType.DECLARATION, // For declarations of symbols.
-    FPP.TokenType.DEFINITION, // For definitions of symbols, for example, in header files.
+    // FPP.TokenType.DEFINITION, // For definitions of symbols, for example, in header files.
     FPP.TokenType.READONLY, // For readonly variables and member fields (constants).
-    FPP.TokenType.STATIC, // For class members (static members).
-    FPP.TokenType.DEPRECATED, // For symbols that should no longer be used.
+    // FPP.TokenType.STATIC, // For class members (static members).
+    // FPP.TokenType.DEPRECATED, // For symbols that should no longer be used.
     FPP.TokenType.ABSTRACT, // For types and member functions that are abstract.
-    FPP.TokenType.ASYNC, // For functions that are marked async.
-    FPP.TokenType.MODIFICATION, // For variable references where the variable is assigned to.
-    FPP.TokenType.DOCUMENTATION, // For occurrences of symbols in documentation.
-    FPP.TokenType.DEFAULTLIBRARY, // For symbols that are part of the standard library.
+    // FPP.TokenType.ASYNC, // For functions that are marked async.
+    // FPP.TokenType.MODIFICATION, // For variable references where the variable is assigned to.
+    // FPP.TokenType.DOCUMENTATION, // For occurrences of symbols in documentation.
+    // FPP.TokenType.DEFAULTLIBRARY, // For symbols that are part of the standard library.
   ];
   tokenModifiersLegend.forEach((tokenModifier, index) => tokenModifiers.set(tokenModifier, index));
 
@@ -68,31 +67,31 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     document: vscode.TextDocument,
     token: vscode.CancellationToken
   ): vscode.SemanticTokens {
-    tokens = [];
     Diagnostics.clear(document);
     Scanner.scanDocument(document.getText());
-    Visitor.visitDocument();
+    let visitedTokens: Visitor.VisitedToken[] = Visitor.visitDocument(); // Use once rejoined with syntax branch
     const builder = new vscode.SemanticTokensBuilder();
     tokens.forEach((token) => {
       builder.push(
         token.line,
         token.startCharacter,
         token.length,
-        this._encodeTokenType(token.tokenType),
-        this._encodeTokenModifiers(token.tokenModifiers)
+        this.encodeTokenType(token.tokenType),
+        this.encodeTokenModifiers(token.tokenModifiers)
       );
     });
+    tokens.length = 0;
     return builder.build();
   }
 
-  private _encodeTokenType(tokenType: string): number {
+  private encodeTokenType(tokenType: string): number {
     if (tokenTypes.has(tokenType)) {
       return tokenTypes.get(tokenType)!;
     }
     return 0;
   }
 
-  private _encodeTokenModifiers(strTokenModifiers: string[]): number {
+  private encodeTokenModifiers(strTokenModifiers: string[]): number {
     let result = 0;
     for (let i = 0; i < strTokenModifiers.length; i++) {
       const tokenModifier = strTokenModifiers[i];
@@ -109,18 +108,17 @@ export module Parser {
     line: number;
     startCharacter: number;
     length: number;
-    tokenType: string;
+    tokenType: FPP.TokenType;
     text: string;
-    tokenModifiers: string[];
+    tokenModifiers: FPP.TokenType[];
   }
 
-  export function parseTextToken(text: string): string {
+  export function parseTextToken(text: string): FPP.TokenType {
     /* eslint-disable curly */
     switch (text) {
-      case FPP.Symbols.TQUOTE:
-        return FPP.Symbols.TQUOTE;
       case FPP.Symbols.QUOTE:
-        return FPP.Symbols.QUOTE;
+      case FPP.Symbols.TQUOTE:
+        return FPP.TokenType.STRING;
       case FPP.Symbols.COMMENT:
         return FPP.TokenType.COMMENT;
       case FPP.Symbols.PREANNOTATION:
@@ -146,13 +144,6 @@ export module Parser {
     return true;
   }
 
-  export function isAlpha(str: string): boolean {
-    for (var i = 0; i < str?.length; i++) {
-      if (str[i].toLowerCase() < "a" || str[i].toLowerCase() > "z") return false;
-    }
-    return true;
-  }
-
   export function isNumber(str: string): boolean {
     if (str[0] === "-" && str[1] !== "-") return isNumber(str.substring(1, str.length));
     if (str[0] + str[1]?.toLowerCase() === "0x") return isHex(str.substring(2, str.length));
@@ -160,7 +151,21 @@ export module Parser {
     return isInteger(str);
   }
 
-  export function isHex(str: string): boolean {
+  export function isInteger(str: string): boolean {
+    for (var i = 0; i < str?.length; i++) {
+      if (str[i] < "0" || str[i] > "9") return false;
+    }
+    return true;
+  }
+
+  function isAlpha(str: string): boolean {
+    for (var i = 0; i < str?.length; i++) {
+      if (str[i].toLowerCase() < "a" || str[i].toLowerCase() > "z") return false;
+    }
+    return true;
+  }
+
+  function isHex(str: string): boolean {
     for (var i = 0; i < str?.length; i++) {
       if (!((str[i].toLowerCase() >= "a" && str[i].toLowerCase() <= "f") || isInteger(str[i])))
         return false;
@@ -168,17 +173,10 @@ export module Parser {
     return true;
   }
 
-  export function isFloat(str: string): boolean {
+  function isFloat(str: string): boolean {
     return (
       isInteger(str.substring(0, str.indexOf("."))) &&
       isInteger(str.substring(str.indexOf(".") + 1, str.length))
     );
-  }
-
-  export function isInteger(str: string): boolean {
-    for (var i = 0; i < str?.length; i++) {
-      if (str[i] < "0" || str[i] > "9") return false;
-    }
-    return true;
   }
 }
