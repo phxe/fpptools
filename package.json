@@ -1,16 +1,38 @@
 {
   "name": "fpp",
-  "displayName": "F Prime Prime",
-  "description": "F Prime Prime for Visual Studio Code",
+  "displayName": "FPP Tools",
+  "description": "F Prime Prime Language Support for Visual Studio Code",
   "version": "0.0.1",
+  "publisher": "NASA JPL, in collaboration with UNLV CS",
+  "contributors": [
+    "See contributors.txt"
+  ],
+  "license": "To be added",
+  "repository": {
+    "type": "git",
+    "url": "To be added"
+  },
+  "homepage": "",
   "engines": {
     "vscode": "^1.64.0"
   },
   "categories": [
+    "Programming Languages",
+    "Formatters",
     "Other"
   ],
+  "keywords": [
+    "fpp",
+    "f''",
+    "f``",
+    "f prime prime",
+    "f prime"
+  ],
+  "preview": true,
   "activationEvents": [
     "onCommand:fpp.example",
+    "onCommand:fpptools.filenames",
+    "onCommand:fpptools.fromxml",
     "onLanguage:fpp"
   ],
   "main": "./out/extension.js",
@@ -23,6 +45,21 @@
       {
         "command": "fpptools.check",
         "title": "Check Semantics",
+        "category": "F`` Tools"
+      },
+      {
+        "command": "fpptools.filenames",
+        "title": "Write File Names",
+        "category": "F`` Tools"
+      },
+      {
+        "command": "fpptools.syntax",
+        "title": "FPP to AST",
+        "category": "F`` Tools"
+      },
+      {
+        "command": "fpptools.fromxml",
+        "title": "fpp from XML",
         "category": "F`` Tools"
       }
     ],
@@ -38,7 +75,8 @@
           "f prime prime"
         ],
         "extensions": [
-          ".fpp"
+          ".fpp",
+          ".fppi"
         ],
         "configuration": "./language-configuration.json"
       }

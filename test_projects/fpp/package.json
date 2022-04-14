@@ -13,7 +13,7 @@
         "languages": [{
             "id": "fpp",
             "aliases": ["FPP", "fpp"],
-            "extensions": [".fpp"],
+            "extensions": [".fpp", ".fppi"],
             "configuration": "./language-configuration.json"
         }],
         "grammars": [{
