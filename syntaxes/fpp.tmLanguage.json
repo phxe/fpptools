@@ -1,6 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "fpp",
+  "scopeName": "source.fpp",
+  "fileTypes": [
+    "fpp",
+    "fppi"
+  ],
   "patterns": [
     {
       "include": "#comments"
@@ -229,6 +234,5 @@
         }
       ]
     }
-  },
-  "scopeName": "source.fpp"
+  }
 }

@@ -8,19 +8,28 @@
 // Indentation Rules
 // https://code.visualstudio.com/api/language-extensions/language-configuration-guide
 {
+  // You can specify comments.lineComment to control how VS Code should comment out lines.
   "comments": {
-    // symbol used for single line comment. Remove this entry if your language does not support line comments
     "lineComment": "#",
   },
-  // symbols used as brackets
-  // updated for FPP brackets (note, brackets are also apart of symbol tokens in FPP)
+  // When you move the cursor to a bracket defined here, VS Code will highlight that 
+  // bracket together with its matching pair.
   "brackets": [
+    [
+      "{",
+      "}"
+    ],
     [
       "[",
       "]"
-    ]
+    ],
+    [
+      "(",
+      ")"
+    ],
   ],
-  // symbols that are auto closed when typing
+  // When you type an opening pair, VS Code creates a closing pair and puts your cursor in the middle.
+  // Users can tweak the autoclosing behavior with the editor.autoClosingQuotes and editor.autoClosingBrackets settings.
   "autoClosingPairs": [
     [
       "{",
@@ -43,7 +52,9 @@
       "\""
     ]
   ],
-  // symbols that can be used to surround a selection
+  // When you select a range in VS Code and enter an opening bracket, VS Code surrounds the 
+  // selected content with a pair of brackets. This feature is called Autosurrounding.
+  // Users can tweak the autosurrounding behavior with the editor.autoSurround setting.
   "surroundingPairs": [
     [
       "{",
@@ -62,22 +73,15 @@
       "\""
     ]
   ],
-  // fold and unfold regions defined by start and end markers
-  "folding": {
-    "markers": {
-      "start": "^\\s*<\\s*REGION\\s*\\w*\\s*>",
-      "end": "^\\s*<\\s*ENDREGION\\b\\s*>"
-    }
-  },
-  "wordPattern": "([^\\s\\{\\}\\[\\]\\(\\)\\/\\\\\\#\\@\\*\\+\\-\\=\\;\\:\\'\\&\\~\\!\\%\"\\,\\.\\<\\>\\?\\|\\`\\^]+)|(-?\\d*.\\d*)",
-  //Indent or decreases indent when pattern is found
+  // Defines what's considered as a word in the programming language.
+  // Code suggestion features will use this setting to determine word boundaries if wordPattern is set.
+  // Note this setting won't affect word-related editor commands, which are controlled by the editor setting editor.wordSeparators.
+  // "wordPattern": "([^\\s\\{\\}\\[\\]\\(\\)\\/\\\\\\#\\@\\*\\+\\-\\=\\;\\:\\'\\&\\~\\!\\%\"\\,\\.\\<\\>\\?\\|\\`\\^]+)|(-?\\d*.\\d*)",
+  // Defines how the editor should adjust the indentation of current line or next line when you type, paste, and move lines.
   "indentationRules": {
-    "increaseIndentPattern": "\\(|\\{}|\\{|\\(\\)\\{|\\[|\\/\/", //Something into ( or something into { or something into \
-    "decreaseIndentPattern": "}",
-    //"indentNextLinePattern": "\\(|\\/\/",
-    //"unIndentedLinePattern": "}|}\\(\\)\\{" //an if else statement if (,,) {..} else {..}
+    "increaseIndentPattern": "\\(|\\{|\\[",
   },
-  //Rules on enter key press
+  // Defines a list of rules that will be evaluated when Enter is pressed in the editor.
   "onEnterRules": [
     {
       "beforeText": "\\(|\\{|\\[",
