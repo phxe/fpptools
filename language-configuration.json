@@ -72,22 +72,5 @@
       "\"",
       "\""
     ]
-  ],
-  // Defines what's considered as a word in the programming language.
-  // Code suggestion features will use this setting to determine word boundaries if wordPattern is set.
-  // Note this setting won't affect word-related editor commands, which are controlled by the editor setting editor.wordSeparators.
-  // "wordPattern": "([^\\s\\{\\}\\[\\]\\(\\)\\/\\\\\\#\\@\\*\\+\\-\\=\\;\\:\\'\\&\\~\\!\\%\"\\,\\.\\<\\>\\?\\|\\`\\^]+)|(-?\\d*.\\d*)",
-  // Defines how the editor should adjust the indentation of current line or next line when you type, paste, and move lines.
-  "indentationRules": {
-    "increaseIndentPattern": "\\(|\\{|\\[",
-  },
-  // Defines a list of rules that will be evaluated when Enter is pressed in the editor.
-  "onEnterRules": [
-    {
-      "beforeText": "\\(|\\{|\\[",
-      "action": {
-        "indent": "indentOutdent"
-      }
-    }
   ]
 }
