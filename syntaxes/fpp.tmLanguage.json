@@ -102,7 +102,7 @@
       "patterns": [
         {
           "name": "support.variable.parameter.fpp",
-          "match": "\\b(\\$\\w+|[_a-zA-Z]\\w*)(\\s|$)"
+          "match": "\\b(\\$?[_a-zA-Z][_A-Za-z0-9]*)|([_a-zA-Z][_A-Za-z0-9]*)"
         }
       ]
     },

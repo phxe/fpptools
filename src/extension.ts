@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { DocumentSemanticTokensProvider, legend } from "./parser";
 import { Diagnostics } from "./diagnostics";
 
-vscode.window.showInformationMessage("F`` Extension Active");
+vscode.window.showInformationMessage("FPPTools Extension Active");
 
 export function activate(context: vscode.ExtensionContext) {
   Diagnostics.createCollection();
@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
   //    output: If the check succeeds, then no standard output; otherwise an error message.
   vscode.commands.registerCommand("fpptools.check", () => {
     vscode.window.showInformationMessage(
-      "F`` Tools: Check Semantics Tool Test..." //test message
+      "FPP Tools: Check Semantics Tool Test..." //test message
     );
 
     // users will be able to select multiple files. Only .FPP files will appear.
