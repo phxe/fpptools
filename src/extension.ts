@@ -55,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     //choose from current file in editor or open a file:
     vscode.window.showQuickPick(quickPickSelection, selectionOptions).then((selection) => {
-      if (selection.label === "Run on current file in editor") {
+      if (selection?.label === "Run on current file in editor") {
         // TODO: get currently open file in editor
         vscode.window.showInformationMessage(
           "Selected File: " + vscode.window.activeTextEditor?.document.uri.fsPath
@@ -75,13 +75,13 @@ export function activate(context: vscode.ExtensionContext) {
     // TODO: once filepaths are obtained, files will be checked using the fpp-check tool in some way.
   });
 
-  context.subscriptions.push(
-    vscode.languages.registerDocumentSemanticTokensProvider(
-      { scheme: "file", language: "fpp" },
-      new DocumentSemanticTokensProvider(),
-      legend
-    )
-  );
+  // context.subscriptions.push(
+  //   vscode.languages.registerDocumentSemanticTokensProvider(
+  //     { scheme: "file", language: "fpp" },
+  //     new DocumentSemanticTokensProvider(),
+  //     legend
+  //   )
+  // );
 
   const statementIdentifier = vscode.languages.registerCompletionItemProvider(
     "plaintext",
@@ -106,111 +106,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // using subscriptions since it ensures the command is properly de-registered when extension is unloaded
   context.subscriptions.push(statementIdentifier);
-  // fpp tools commands test: fpp filenames
-  //    writes out the names of XML and C++ files generated from FPP source files
-  //    input: list of files, either single file stdin or list of files specified on the command line
-  //    output: list of file names
-  //            print list to the console or save to a txt file?
-  vscode.commands.registerCommand("fpptools.filenames", () => {
-    vscode.window.showInformationMessage("F'' Tools: Writing File Names...");
-
-    const options = {
-      canSelectMany: true,
-      canSelectFiles: true,
-      canSelectFolders: false,
-      filters: {
-        FPP: ["fpp", "fppi"],
-      },
-      defaultUri: vscode.Uri.file("C:\\"),
-    };
-
-    // select a file or multiple files (folders set to false in options)
-    vscode.window.showOpenDialog(options).then((fileUri) => {
-      if (fileUri && fileUri.length > 0) {
-        // show info message stating the file count
-        vscode.window.showInformationMessage("You have selected " + fileUri.length + " file/s.");
-
-        // print file name of each selected file
-        for (var f = 0; f < fileUri.length; f++) {
-          let filepath: string = fileUri[f].fsPath;
-          let filename: string = filepath.replace(/^.*[\\\/]/, "");
-
-          // show file name as an info message
-          //vscode.window.showInformationMessage("File " + (f+1) + ": " + filename);
-
-          // print file name to the debug console
-          console.log("File " + (f + 1) + ": " + filename);
-        }
-      }
-    });
-
-    // once file/s selected:
-    //    1. parse each file, generate list of translation units
-    //    2. walk AST and identify defs that cause XML or C++ files to be generated
-    //    3. write out names of generated files (one per line)
-  });
-
-  // fpp tools commands test: fpp syntax
-  //    this command will parse FPP source files into an abstract syntax tree (AST) using the fpp-syntax tool
-  //    input: a file or list of files
-  //    output: If the parse succeeds, then no standard output; otherwise an error message.
-  //    extras: Optional text representation of the AST
-  vscode.commands.registerCommand("fpptools.syntax", () => {
-    vscode.window.showInformationMessage("F`` Tools: Parse FPP to AST"); //debug message
-
-    var options: vscode.OpenDialogOptions = {
-      canSelectMany: true,
-      filters: {
-        "FPP Files": ["fpp", "fppi"],
-      },
-    };
-
-    vscode.window.showOpenDialog(options).then((files) => {
-      if (files) {
-        for (var uri of files) {
-          vscode.window.showInformationMessage("Selected File: " + uri.fsPath);
-        }
-      }
-    });
-  });
-
-  // fpp tools commands test: fpp from xml
-  // this command will perform converting of F Prime XML files to FPP files.
-  //    input: A list of XML files to translate, specified as a list of files on the command line
-  //    output: FPP source, written to standard output
-  //    Procedure:
-  //    1 Read each of the files in the list
-  //    2 Generate the output for each F Prime model element in the list
-  vscode.commands.registerCommand("fpptools.fromxml", () => {
-    vscode.window.showInformationMessage("F'' Tools: fpp from XML");
-    // For now, will do just one selected file.
-    var options: vscode.OpenDialogOptions = {
-      filters: {
-        "FPP Files": ["fpp", "fppi"],
-      },
-    };
-
-    vscode.window.showOpenDialog(options).then((files) => {
-      if (files) {
-        for (var uri of files) {
-          vscode.window.showInformationMessage("Selected File: " + uri.fsPath);
-        }
-      }
-    });
-
-    //TODO: Generate the output for the F Prime model element that was selected
-  });
-
-  // context.subscriptions.push(
-  //   vscode.languages.registerDocumentSemanticTokensProvider(
-  //     { language: "fpp" },
-  //     new DocumentSemanticTokensProvider(),
-  //     legend
-  //   )
-  // );
 
   // code completion
-
   const keywordProvider = vscode.languages.registerCompletionItemProvider("plaintext", {
     //keyword code completion
     provideCompletionItems(
