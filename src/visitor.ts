@@ -329,8 +329,6 @@ export module Visitor {
     let c = tokens[index].text;
     let visited = new Array<number>(6);
     let done = false;
-    // TODO: Remove while loop
-    while (!done) {
       switch (tokens[index + 1]?.text) {
         case FPP.Operators.BSLASH:
           index++;
@@ -370,7 +368,6 @@ export module Visitor {
         default:
           done = true;
       }
-    }
     return index;
   }
 
@@ -845,6 +842,33 @@ export module Visitor {
   function visitPortMatchingSpec(index: number): number {
     console.log("Visiting Port Matching Specifier\tNext Token:\t", tokens[index + 1]?.text);
     // TODO
+    /* Notes: 6.11 in fpp-spec
+       match identifier with identifier
+       identifiers must name general port instance such as "async input"
+       you can find examples under 6.10.1 in fpp-spec
+       these components can be active and queued
+
+    */
+
+    // the code below may not be used in the end, referencing line 782 in visitor.ts
+    // there you can find checks for the general port kind which is what I am trying to do here
+    // need to research more 
+    if(++index < tokens.length){
+      do{
+        if(tokens[index].tokenType === FPP.TokenType.ASYNC){
+
+        }
+        if(tokens[index].tokenType === FPP.TokenType.GUARDED){
+
+        }
+        if(tokens[index].tokenType === FPP.TokenType.OUTPUT){
+
+        }
+        if(tokens[index].tokenType === FPP.TokenType.SYNC){
+
+        }
+      }while(true);
+    }
     return index;
   }
 
