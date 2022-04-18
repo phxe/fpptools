@@ -8,6 +8,9 @@
   ],
   "patterns": [
     {
+      "include": "#annotations"
+    },
+    {
       "include": "#comments"
     },
     {
@@ -30,22 +33,26 @@
     }
   ],
   "repository": {
+    "annotations": {
+      "patterns": [
+        {
+          "begin": "\\@<",
+          "end": "\\n",
+          "name": "annotation.line.post.fpp"
+        },
+        {
+          "begin": "\\@",
+          "end": "\\n",
+          "name": "annotation.line.pre.fpp"
+        }
+      ]
+    },
     "comments": {
       "patterns": [
         {
           "begin": "\\#",
           "end": "\\n",
           "name": "comment.line.number-sign.fpp"
-        },
-        {
-          "begin": "\\@<",
-          "end": "\\n",
-          "name": "comment.line.postannotation.fpp"
-        },
-        {
-          "begin": "\\@",
-          "end": "\\n",
-          "name": "comment.line.preannotation.fpp"
         }
       ]
     },
@@ -89,7 +96,7 @@
       "patterns": [
         {
           "name": "constant.numeric.integer.fpp",
-          "match": "\\b(?<!\\$)[0-9][0-9_]*?\\b(?!\\$)"
+          "match": "(?<=^|\\s)[0-9]+(?=$|\\s)"
         },
         {
           "name": "constant.numeric.hex.fpp",
@@ -97,7 +104,7 @@
         },
         {
           "name": "constant.numeric.float.fpp",
-          "match": "\\b(([0-9]+)[eE][+-][0-9]+|([0-9]+\\.[0-9]*)|(\\.[0-9]+))([eE][+-]?[0-9]+)?[fF]?(\\s|$)"
+          "match": "\\b(([0-9]+[eE][+-][0-9]+)|([0-9]+.[0-9]+)([eE][+-]?[0-9]+)?)[fF]?(\\s|$)"
         }
       ]
     },

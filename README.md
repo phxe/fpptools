@@ -1,33 +1,57 @@
-# fpptools
+# FPPTools
 
-Visual Studio Code extension for **F Prime Prime (FPP)**. Provides language support for **.fpp* files.
-- https://github.com/fprime-community/fpp
+Welcome to the Visual Studio Code extension for **F Prime Prime (FPP)**. This extension provides language support for FPP (\**.fpp* and **.fppi*).
 
-FPP is a modeling language for F Prime flight software framework.
-- https://nasa.github.io/fprime/
+---
+
+### [F Prime Prime](https://github.com/fprime-community/fpp)
+> FPP is a modeling language for the F Prime flight software (FSW) framework. Developers may combine code generated from FPP with code written by hand to create, e.g., deployable FSW programs and ground data environments.
+
+### [F Prime](https://nasa.github.io/fprime/)
+
+> F´ (or F Prime) is a software framework for the rapid development and deployment of embedded systems and spaceflight applications. Originally developed at NASA’s Jet Propulsion Laboratory, F´ is open-source software that has been successfully deployed for several space applications. It has been used for but is not limited to, CubeSats, SmallSats, instruments, and deployable.
+
+---
+
+## Features
+
+### Syntax Highlighting
+
+Highlighting of FPP keywords, symbols, and identifiers is performed using VS Code's tokenization engine, TextMate.
+
+## Planned Features
+
+- Intellisense
+- Code Referencing
+- Code Diagnostics
+- Semantic Highlighting
+
+---
+
+# For Developers
 
 ## Requirements
 
-Node.js
-- https://nodejs.org/en/
+### Node.js
 
-Run `npm install` in this folder to install all necessary npm modules.
+> https://nodejs.org/en/
 
-## Documentation
+- Run `npm install` to install dependencies
+- Open in Visual Studio Code (`code .`)
+- Press <kbd>F5</kbd> to debug
 
-Press `F5` to run/debug the extension.
+## Tools
 
-### src/extension.ts
-Main extension code.
+### Inspect Tokens and Scopes
 
-### package.json
-Manifest file required for VS Code extensions. Links the code in extension.ts.
-- https://docs.npmjs.com/cli/v7/configuring-npm/package-json
-- https://code.visualstudio.com/api/references/extension-manifest
 
-### language-configuration.json
-Provides basic autocompleting features.
-- https://code.visualstudio.com/api/language-extensions/language-configuration-guide
+To view the classification of tokens, press <kbd>F1</kbd> and type `Developer: Inspect Editor Tokens and Scopes`. This will show token details from the TextMate tokenization engine as well as any semantic tokenization engine.
 
-### sample
-Sample fpp files for feature testing.
+## License
+
+Licensed under the Apache License, Version 2.0
+
+
+## UNLV Computer Science Senior Design Team
+
+This extension was created by students at the University of Nevada, Las Vegas in collaboration with JPL.
