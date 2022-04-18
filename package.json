@@ -63,7 +63,10 @@
       {
         "language": "fpp",
         "scopeName": "source.fpp",
-        "path": "./syntaxes/fpp.tmLanguage.json"
+        "path": "./syntaxes/fpp.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.cpp": "cpp"
+        }
       }
     ],
     "semanticTokenTypes": [

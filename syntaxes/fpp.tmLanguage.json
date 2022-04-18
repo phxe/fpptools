@@ -53,10 +53,13 @@
       "name": "string.quoted.triple.fpp",
       "begin": "\"\"\"",
       "end": "\"\"\"",
-      "contentName": "string.quoted.triple.block.fpp",
+      "contentName": "meta.embedded.block.cpp",
       "patterns": [
         {
           "include": "#string-escape-sequences"
+        },
+        {
+          "include": "source.cpp"
         }
       ]
     },
