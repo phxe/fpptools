@@ -1,6 +1,6 @@
 # FPPTools
 
-Welcome to the Visual Studio Code extension for **F Prime Prime (FPP)**. This extension provides language support for FPP (\**.fpp* and **.fppi*).
+Welcome to the Visual Studio Code extension for **F Prime Prime (FPP)**. This extension provides language support for FPP (\**.fpp* and \**.fppi*).
 
 ---
 
@@ -45,7 +45,7 @@ Highlighting of FPP keywords, symbols, and identifiers is performed using VS Cod
 ### Inspect Tokens and Scopes
 
 
-To view the classification of tokens, press <kbd>F1</kbd> and type `Developer: Inspect Editor Tokens and Scopes`. This will show token details from the TextMate tokenization engine as well as any semantic tokenization engine.
+To view the classification of tokens, press <kbd>F1</kbd> and type `Developer: Inspect Editor Tokens and Scopes`. This will show token details from the TextMate tokenization engine as well as any other semantic token provider.
 
 ## License
 

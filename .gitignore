@@ -4,6 +4,7 @@
 #     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
 
 out/
+*.vsix
 
 # Node artifact files
 node_modules/
