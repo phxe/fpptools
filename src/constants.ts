@@ -8,6 +8,8 @@ export function isMember(str: string, e: any): boolean {
   return e[str as keyof typeof e] !== undefined ? true : false;
 }
 
+export const eof = new Error("End of File");
+
 // Semantic Token Types
 export type TokenType = typeof TokenType[keyof typeof TokenType];
 export const TokenType = {
@@ -18,6 +20,7 @@ export const TokenType = {
   INSTANCE: "instance",
   PORT: "port",
   TOPOLOGY: "topology",
+  SPECIFIER: "specifier",
   NAMESPACE: "namespace",
   CLASS: "class",
   ENUM: "enum",
@@ -41,7 +44,6 @@ export const TokenType = {
   NUMBER: "number",
   REGEXP: "regexp",
   OPERATOR: "operator",
-  CONNECTIONS: "connections",
   // Modifier
   DECLARATION: "declaration",
   DEFINITION: "definition",
@@ -50,9 +52,6 @@ export const TokenType = {
   DEPRECATED: "deprecated",
   ABSTRACT: "abstract",
   ASYNC: "async",
-  GUARDED: "guarded",
-  OUTPUT: "output",
-  SYNC: "sync",
   MODIFICATION: "modification",
   DOCUMENTATION: "documentation",
   DEFAULTLIBRARY: "defaultLibrary",
@@ -99,23 +98,23 @@ export const Operators = {
   BSLASH: "\\",
 } as const;
 
-// FPP Newline Supression Operators
-export type SuppressionOperators = typeof SuppressionOperators[keyof typeof SuppressionOperators];
-export const SuppressionOperators = {
-  LPAREN: "(",
-  MULT: "*",
-  PLUS: "+",
-  COMMA: ",",
-  MINUS: "-",
-  RARROW: "->",
-  DIV: "/",
-  COLON: ":",
-  SEMICOLON: ";",
-  EQ: "=",
-  LBRACKET: "[",
-  LBRACE: "{",
-  BSLASH: "\\",
-} as const;
+// // FPP Newline Supression Operators
+// export type SuppressionOperators = typeof SuppressionOperators[keyof typeof SuppressionOperators];
+// export const SuppressionOperators = {
+//   LPAREN: "(",
+//   MULT: "*",
+//   PLUS: "+",
+//   COMMA: ",",
+//   MINUS: "-",
+//   RARROW: "->",
+//   DIV: "/",
+//   COLON: ":",
+//   SEMICOLON: ";",
+//   EQ: "=",
+//   LBRACKET: "[",
+//   LBRACE: "{",
+//   BSLASH: "\\",
+// } as const;
 
 // FPP Symbols
 export const Symbols = {
@@ -126,23 +125,6 @@ export const Symbols = {
   TQUOTE: '"""',
 } as const;
 
-// FPP Tokens
-export type KeywordTokens = typeof KeywordTokens[keyof typeof KeywordTokens];
-export const KeywordTokens = {
-  ARRAY: "array",
-  COMPONENT: "component",
-  CONSTANT: "constant",
-  INSTANCE: "instance",
-  ENUM: "enum",
-  MODULE: "module",
-  PORT: "port",
-  STRUCT: "struct",
-  TYPE: "type",
-  TOPOLOGY: "topology",
-  PARAM: "param",
-  CONNECTIONS: "connections",
-} as const;
-
 // FPP Token to Semantic Token Type
 export type KeywordTokensMap = typeof KeywordTokensMap[keyof typeof KeywordTokensMap];
 export const KeywordTokensMap = {
@@ -151,25 +133,15 @@ export const KeywordTokensMap = {
   CONSTANT: TokenType.VARIABLE,
   INSTANCE: TokenType.INSTANCE,
   ENUM: TokenType.ENUM,
+  ENUMMEMBER: TokenType.ENUMMEMBER,
   MODULE: TokenType.NAMESPACE,
   PORT: TokenType.PORT,
   STRUCT: TokenType.STRUCT,
   TYPE: TokenType.TYPE,
   TOPOLOGY: TokenType.TOPOLOGY,
-  PARAM: TokenType.TYPEPARAMETER,
-  CONNECTIONS: TokenType.CONNECTIONS,
+  PARAM: TokenType.PARAMETER,
+  SPECIFIER: TokenType.SPECIFIER,
 };
-
-// FPP Modifiers
-export type KeywordModifiers = typeof KeywordModifiers[keyof typeof KeywordModifiers];
-export const KeywordModifiers = {
-  constant: "constant",
-} as const;
-
-// FPP Modifier to Semantic Token Type
-export const KeywordModifiersMap = {
-  constant: TokenType.READONLY,
-} as const;
 
 // All FPP Keywords
 export const Keywords = {

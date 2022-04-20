@@ -17,29 +17,30 @@ export const legend = (function () {
     FPP.TokenType.INSTANCE,
     FPP.TokenType.PORT,
     FPP.TokenType.TOPOLOGY,
+    FPP.TokenType.SPECIFIER,
     // Standard
     FPP.TokenType.NAMESPACE, // For identifiers that declare or reference a namespace, module, or package.
-    FPP.TokenType.CLASS, // For identifiers that declare or reference a class type.
+    // FPP.TokenType.CLASS, // For identifiers that declare or reference a class type.
     FPP.TokenType.ENUM, // For identifiers that declare or reference an enumeration type.
-    FPP.TokenType.INTERFACE, // For identifiers that declare or reference an interface type.
+    // FPP.TokenType.INTERFACE, // For identifiers that declare or reference an interface type.
     FPP.TokenType.STRUCT, // For identifiers that declare or reference a struct type.
-    FPP.TokenType.TYPEPARAMETER, // For identifiers that declare or reference a type parameter.
+    // FPP.TokenType.TYPEPARAMETER, // For identifiers that declare or reference a type parameter.
     FPP.TokenType.TYPE, // For identifiers that declare or reference a type that is not covered above.
     FPP.TokenType.PARAMETER, // For identifiers that declare or reference a function or method parameters.
     FPP.TokenType.VARIABLE, // For identifiers that declare or reference a local or global variable.
-    FPP.TokenType.PROPERTY, // For identifiers that declare or reference a member property, member field, or member variable.
+    // FPP.TokenType.PROPERTY, // For identifiers that declare or reference a member property, member field, or member variable.
     FPP.TokenType.ENUMMEMBER, // For identifiers that declare or reference an enumeration property, constant, or member.
-    FPP.TokenType.DECORATOR, // For identifiers that declare or reference decorators and annotations.
-    FPP.TokenType.EVENT, // For identifiers that declare an event property.
-    FPP.TokenType.FUNCTION, // For identifiers that declare a function.
-    FPP.TokenType.METHOD, // For identifiers that declare a member function or method.
-    FPP.TokenType.MACRO, // For identifiers that declare a macro.
-    FPP.TokenType.LABEL, // For identifiers that declare a label.
+    // FPP.TokenType.DECORATOR, // For identifiers that declare or reference decorators and annotations.
+    // FPP.TokenType.EVENT, // For identifiers that declare an event property.
+    // FPP.TokenType.FUNCTION, // For identifiers that declare a function.
+    // FPP.TokenType.METHOD, // For identifiers that declare a member function or method.
+    // FPP.TokenType.MACRO, // For identifiers that declare a macro.
+    // FPP.TokenType.LABEL, // For identifiers that declare a label.
     FPP.TokenType.COMMENT, // For tokens that represent a comment.
     FPP.TokenType.STRING, // For tokens that represent a string literal.
     FPP.TokenType.KEYWORD, // For tokens that represent a language keyword.
     FPP.TokenType.NUMBER, // For tokens that represent a number literal.
-    FPP.TokenType.REGEXP, // For tokens that represent a regular expression literal.
+    // FPP.TokenType.REGEXP, // For tokens that represent a regular expression literal.
     FPP.TokenType.OPERATOR, // For tokens that represent an operator.
   ];
   tokenTypesLegend.forEach((tokenType, index) => tokenTypes.set(tokenType, index));
@@ -52,7 +53,7 @@ export const legend = (function () {
     // FPP.TokenType.STATIC, // For class members (static members).
     // FPP.TokenType.DEPRECATED, // For symbols that should no longer be used.
     FPP.TokenType.ABSTRACT, // For types and member functions that are abstract.
-    // FPP.TokenType.ASYNC, // For functions that are marked async.
+    FPP.TokenType.ASYNC, // For functions that are marked async.
     // FPP.TokenType.MODIFICATION, // For variable references where the variable is assigned to.
     // FPP.TokenType.DOCUMENTATION, // For occurrences of symbols in documentation.
     // FPP.TokenType.DEFAULTLIBRARY, // For symbols that are part of the standard library.
@@ -68,8 +69,13 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
     token: vscode.CancellationToken
   ): vscode.SemanticTokens {
     Diagnostics.clear(document);
+    tokens.length = 0;
     Scanner.scanDocument(document.getText());
-    let visitedTokens: Visitor.VisitedToken[] = Visitor.visitDocument(); // Use once rejoined with syntax branch
+    try {
+      let visitedTokens: Visitor.VisitedToken[] = Visitor.visitDocument(); // Use once rejoined with syntax
+    } catch {
+      console.log("Exception: " + FPP.eof.message);
+    }
     const builder = new vscode.SemanticTokensBuilder();
     tokens.forEach((token) => {
       builder.push(
@@ -80,7 +86,6 @@ export class DocumentSemanticTokensProvider implements vscode.DocumentSemanticTo
         this.encodeTokenModifiers(token.tokenModifiers)
       );
     });
-    tokens.length = 0;
     return builder.build();
   }
 
