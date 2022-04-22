@@ -19,13 +19,6 @@ Welcome to the Visual Studio Code extension for **F Prime Prime (FPP)**. This ex
 
 Highlighting of FPP keywords, symbols, and identifiers is performed using VS Code's tokenization engine, TextMate.
 
-## Planned Features
-
-- Intellisense
-- Code Referencing
-- Code Diagnostics
-- Semantic Highlighting
-
 ---
 
 # For Developers
@@ -51,7 +44,10 @@ To view the classification of tokens, press <kbd>F1</kbd> and type `Developer: I
 
 Licensed under the Apache License, Version 2.0
 
+See LICENSE.MD
 
 ## UNLV Computer Science Senior Design Team
 
 This extension was created by students at the University of Nevada, Las Vegas in collaboration with JPL.
+
+See contributors.txt
