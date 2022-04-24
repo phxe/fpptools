@@ -37,17 +37,16 @@ Highlighting of FPP keywords, symbols, and identifiers is performed using VS Cod
 
 ### Inspect Tokens and Scopes
 
-
 To view the classification of tokens, press <kbd>F1</kbd> and type `Developer: Inspect Editor Tokens and Scopes`. This will show token details from the TextMate tokenization engine as well as any other semantic token provider.
 
 ## License
 
 Licensed under the Apache License, Version 2.0
 
-See LICENSE.MD
+See LICENSE.md
 
 ## UNLV Computer Science Senior Design Team
 
 This extension was created by students at the University of Nevada, Las Vegas in collaboration with JPL.
 
-See contributors.txt
+See CONTRIBUTORS.md
