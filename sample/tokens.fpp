@@ -34,14 +34,19 @@ U32
 U64
 U8
 bool
+array
 constant
 string
+
+# Control Keywords:
+import
+include
+locate
 
 # Keywords:
 active
 activity
 always
-array
 assert
 async
 at
@@ -65,12 +70,9 @@ guarded
 health
 high
 id
-import
-include
 input
 instance
 internal
-locate
 low
 match
 module
