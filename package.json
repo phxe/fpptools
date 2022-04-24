@@ -97,13 +97,6 @@
         "configuration": "./language-configuration.json"
       }
     ],
-    "commands": [
-      {
-        "command": "fpptools.check",
-        "title": "Check Semantics",
-        "category": "FPP"
-      }
-    ],
     "grammars": [
       {
         "language": "fpp",

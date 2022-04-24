@@ -43,7 +43,9 @@ To view the classification of tokens, press <kbd>F1</kbd> and type `Developer: I
 
 Licensed under the Apache License, Version 2.0
 
-See LICENSE.md
+See LICENSE
+
+---
 
 ## UNLV Computer Science Senior Design Team
 
