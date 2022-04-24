@@ -2,7 +2,7 @@
   "name": "fpptools",
   "displayName": "FPPTools",
   "description": "F Prime Prime Language Support for Visual Studio Code",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "unlv-team5",
   "icon": "logo.png",
   "contributors": [
@@ -56,7 +56,8 @@
     "type": "git",
     "url": "https://github.com/phxe/fpptools"
   },
-  "homepage": "",
+  "bugs": "https://github.com/phxe/fpptools/issues",
+  "homepage": "https://github.com/phxe/fpptools#readme",
   "engines": {
     "vscode": "^1.64.0"
   },
