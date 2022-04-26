@@ -100,7 +100,7 @@
       "patterns": [
         {
           "name": "constant.numeric.integer.fpp",
-          "match": "(?<=^|\\s)[0-9]+(?=$|\\s)"
+          "match": "\\b(?<!\\$|\\.|[eE][+-])[0-9]+\\b(?!\\$|\\.)"
         },
         {
           "name": "constant.numeric.hex.fpp",
@@ -108,7 +108,7 @@
         },
         {
           "name": "constant.numeric.float.fpp",
-          "match": "\\b(([0-9]+[eE][+-][0-9]+)|([0-9]+.[0-9]+)([eE][+-]?[0-9]+)?)[fF]?(\\s|$)"
+          "match": "([0-9]+[eE][+-]?[0-9]+[fF]?)|[0-9]\\.[0-9]+([Ee][+-]?[0-9]+)?[fF]?"
         }
       ]
     },

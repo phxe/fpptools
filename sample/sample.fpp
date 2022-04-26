@@ -39,13 +39,17 @@ enum M {
   async input port T: M.N priority 10 drop
   sync input port U: 
     serial
-  guarded input port V: [5 * 5]
+  guarded input port V: [5 * 5] serial
   output port W: [10] M.O
   event port X
   text event port Y
   time get port Z
   param set port AA
   command recv port AB
+  async command AsyncParams(
+    param1: U32 @< Param 1
+    param2: string size 4 @< Param 2
+  ) opcode 0x03
 }
 
 # Error
@@ -74,6 +78,11 @@ instance commandDispatcher: Svc.CommandDispatcher base id 0x100 \
   """
 }
 
+constant XXX = "A"
+
+constant XXX = """
+// Test
+"""
 
 
 enum FilterSeverity {
@@ -110,3 +119,33 @@ enum FilterSeverity {
 #   constant h = E.b # Refers to M.E.b
 #   constant i = M.E.b # Refers to M.E.b
 # }
+
+# Syntax Tests
+# 43423
+# 52525*5325
+# 003
+# 0*4/0+3/0.0e+42
+# 0x44334
+
+# 3.1415
+# 2.51e-21
+# 2.4e34
+# 3.5e+415
+# 32e-15
+# 321e+15
+# 3e+5*3.515
+
+# asdf3.a
+# a.a
+# (6).5
+# ADS.
+# 5.
+# 5.6
+
+# (3.1415)
+# [2.51e-21]
+# 2.4e34*
+# 3.5e+415/
+# 32e-15+
+# {321e+15}
+# 3e+5-5
