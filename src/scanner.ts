@@ -1,8 +1,10 @@
 import * as FPP from "./constants";
-import { Parser, tokens } from "./parser";
+import { Parser } from "./parser";
+import { ParsedToken } from "./token";
 
 export module Scanner {
-  export function scanDocument(text: string) {
+  export function scanDocument(text: string): ParsedToken[] {
+    const tokens: ParsedToken[] = [];
     const lines = text.split(/\r\n|\r|\n/);
     let index = 0;
     let textToken = "";
@@ -48,10 +50,7 @@ export module Scanner {
           case FPP.TokenType.STRING:
             if (textToken === FPP.Symbols.QUOTE) {
               let k = closeIndex;
-              while (
-                (line[k] !== '"' && k < line.length) ||
-                (line[k] === '"' && line[k - 1] === "\\" && k < line.length)
-              ) {
+              while ((line[k] !== '"' && k < line.length) || (line[k] === '"' && line[k - 1] === "\\" && k < line.length)) {
                 k++;
               }
               if (k !== line.length) {
@@ -73,7 +72,7 @@ export module Scanner {
                       length: closeIndex,
                       tokenType: tokenType,
                       text: textToken,
-                      tokenModifiers: [""],
+                      tokenModifiers: [],
                     });
                     openIndex = 0;
                     index = 0;
@@ -84,19 +83,21 @@ export module Scanner {
                     break;
                   }
                   if (j === lines.length - 1) {
-                    return;
+                    return tokens;
                   }
                 }
               }
             }
             break;
-          // Tokenize remaining line for comments and annotations
-          case FPP.TokenType.COMMENT:
+          // Tokenize remaining line
           case FPP.TokenType.ANNOTATION:
             textToken = line.substring(openIndex);
             index = line.length;
             closeIndex = index;
             break;
+          case FPP.TokenType.COMMENT:
+            index = line.length;
+            continue;
         }
 
         tokens.push({
@@ -105,11 +106,11 @@ export module Scanner {
           length: closeIndex - openIndex,
           tokenType: tokenType,
           text: textToken,
-          tokenModifiers: [""],
+          tokenModifiers: [],
         });
       }
     }
-    return;
+    return tokens;
   }
 
   function getCloseIndex(text: string, curr: number): number {

@@ -1,101 +1,116 @@
 import * as FPP from "./constants";
+import { DiagnosticSeverity } from "vscode";
 import { Diagnostics } from "./diagnostics";
-import { Parser, tokens } from "./parser";
+import { SemanticToken, ParsedToken } from "./token";
+import { Parser } from "./parser";
 
-const identifiers = new Map<string, [string, FPP.TokenType, FPP.TokenType[]]>();
-const currentScope: [string, FPP.TokenType][] = [["", FPP.TokenType.NIL]];
+export class Visitor {
+  semanticTokens: SemanticToken[] = [];
+  identifiers = new Map<string, [string, FPP.TokenType, FPP.ModifierType[]]>();
+  tokens: ParsedToken[] = []; // TODO: Make private when finished
+  private currentScope: [string, FPP.TokenType][] = [["", FPP.TokenType.NIL]];
+  private index: number = 0;
 
-export module Visitor {
-  export interface VisitedToken {
-    line: number;
-    startCharacter: number;
-    length: number;
-    tokenType: FPP.TokenType;
-    text: string;
-    tokenModifiers: FPP.TokenType[];
+  constructor(parsed: ParsedToken[]) {
+    this.tokens = parsed;
   }
 
-  export function visitDocument(): VisitedToken[] {
-    let visitedTokens: VisitedToken[] = [];
-    let index = 0;
-    while (index < tokens.length) {
+  visitDocument() {
+    while (this.index < this.tokens.length) {
       // prettier-ignore
-      switch (tokens[index].text) {
+      switch (this.tokens[this.index].text) {
         // Definitions
-        case FPP.Keywords.array:    index = visitArrayDef(index); break;
+        case FPP.Keywords.array:    this.visitArrayDef(); break;
         case FPP.Keywords.active:
         case FPP.Keywords.passive:
-        case FPP.Keywords.queued:   index = visitComponentDef(index); break;
-        case FPP.Keywords.constant: index = visitConstantDef(index); break;
-        case FPP.Keywords.instance: index = visitComponentInstanceDef(index); break;
-        case FPP.Keywords.enum:     index = visitEnumDef(index); break;
-        case FPP.Keywords.module:   index = visitModuleDef(index); break;
-        case FPP.Keywords.port:     index = visitPortDef(index); break;
-        case FPP.Keywords.struct:   index = visitStructDef(index); break;
-        case FPP.Keywords.type:     index = visitTypeDef(index); break;
-        case FPP.Keywords.topology: index = visitTopologyDef(index); break;
+        case FPP.Keywords.queued:   this.visitComponentDef(); break;
+        case FPP.Keywords.constant: this.visitConstantDef(); break;
+        case FPP.Keywords.instance: this.visitComponentInstanceDef(); break;
+        case FPP.Keywords.enum:     this.visitEnumDef(); break;
+        case FPP.Keywords.module:   this.visitModuleDef(); break;
+        case FPP.Keywords.port:     this.visitPortDef(); break;
+        case FPP.Keywords.struct:   this.visitStructDef(); break;
+        case FPP.Keywords.type:     this.visitTypeDef(); break;
+        case FPP.Keywords.topology: this.visitTopologyDef(); break;
         // Specifiers
-        case FPP.Keywords.locate:   index = visitLocationSpec(index); break;
-        case FPP.Keywords.event:    index = visitEventSpec(index); break;
+        case FPP.Keywords.locate:   this.visitLocationSpec(); break;
+        case FPP.Keywords.event:    this.visitEventSpec(); break;
         case FPP.Operators.BSLASH: break;
         default:
-          switch (tokens[index].tokenType) {
+          switch (this.tokens[this.index].tokenType) {
             case FPP.TokenType.STRING:
-            case FPP.TokenType.COMMENT:
+            // case FPP.TokenType.COMMENT:
             case FPP.TokenType.ANNOTATION:
               break;
             default:
               // Error
               Diagnostics.createFromToken(
-                "Unexpected token: " + tokens[index].text,
-                tokens[index],
-                0
+                "Unexpected token: " + this.tokens[this.index].text,
+                this.tokens[this.index],
+                DiagnosticSeverity.Error
               );
           }
       }
-      if (currentScope.length === 0) {
-        currentScope.push(["", FPP.TokenType.NIL]);
+      if (this.currentScope.length === 0) {
+        this.currentScope.push(["", FPP.TokenType.NIL]);
       }
-      if (currentScope.length !== 1) {
-        console.log("Resetting Scope\t\tCurrent Token:\t" + tokens[index].text);
-        currentScope.length = 1;
+      if (this.currentScope.length !== 1) {
+        console.log("Resetting Scope\t\tCurrent Token:\t", this.tokens[this.index].text);
+        this.currentScope.length = 1;
       }
-      index++;
+      this.nextIndex();
     }
-    identifiers.clear();
-    return visitedTokens;
+    this.identifiers.clear();
   }
 
-  function getNextLineIndex(index: number): number {
-    let thisLine = tokens[index].line;
-    while (index++ < tokens.length && tokens[index]?.line === thisLine) {}
-    return index;
+  private nextLineIndex() {
+    let thisLine = this.tokens[this.index].line;
+    while (this.index++ < this.tokens.length && this.tokens[this.index]?.line === thisLine) {}
   }
 
-  function ignoreNonsemanticTokens(index: number): number {
+  private nextIndex() {
+    this.index++;
+    this.ignoreNonsemanticTokens();
+  }
+
+  private ignoreNonsemanticTokens() {
     while (
-      index < tokens.length &&
-      (tokens[index].tokenType === FPP.TokenType.COMMENT ||
-        tokens[index].tokenType === FPP.TokenType.ANNOTATION ||
-        tokens[index].text === FPP.Operators.BSLASH)
+      this.index < this.tokens.length &&
+      (this.tokens[this.index].tokenType === FPP.TokenType.ANNOTATION ||
+        // this.tokens[this.index].tokenType === FPP.TokenType.COMMENT ||
+        this.tokens[this.index].text === FPP.Operators.BSLASH)
     ) {
-      console.log("Skipping Nonsemantic Token\tCurrent Token:\t", tokens[index].text);
-      index++;
+      console.log("(" + this.index + ")\t", "Skipping Nonsemantic Token\tCurrent Token:\t", this.tokens[this.index].text);
+      this.index++;
     }
-    if (index >= tokens.length) {
-      identifiers.clear();
-      if (currentScope.length === 0) {
-        currentScope.push(["", FPP.TokenType.NIL]);
+    if (this.index >= this.tokens.length) {
+      this.identifiers.clear();
+      if (this.currentScope.length === 0) {
+        this.currentScope.push(["", FPP.TokenType.NIL]);
       }
       throw FPP.eof;
     }
-
-    return index;
   }
 
-  function lookAhead(index: number): string {
-    index = ignoreNonsemanticTokens(++index);
-    return tokens[index]?.text;
+  private lookAhead(str: string[], jump: boolean = true): boolean {
+    let tmpIndex = this.index + 1;
+    while (
+      tmpIndex < this.tokens.length &&
+      (this.tokens[tmpIndex].tokenType === FPP.TokenType.ANNOTATION ||
+        // this.tokens[tmpIndex].tokenType === FPP.TokenType.COMMENT ||
+        this.tokens[tmpIndex].text === FPP.Operators.BSLASH)
+    ) {
+      tmpIndex++;
+    }
+    console.log("(" + this.index + ")\t", "Lookahead Token(s):\t", str, "\tFound Token:\t", this.tokens[tmpIndex]?.text);
+    if (str.includes(this.tokens[tmpIndex]?.text)) {
+      if (jump) {
+        this.index = tmpIndex;
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 
   //---------------------------------------------------------------------------\\
@@ -103,216 +118,216 @@ export module Visitor {
   //---------------------------\\ G E N E R I C S //---------------------------\\
   //---------------------------------------------------------------------------\\
 
-  function visitToken(index: number, expectedToken: any, required: boolean): number {
-    index = ignoreNonsemanticTokens(index);
-    console.log("Expecting Token(s):\t", expectedToken, "\tCurrent Token:\t", tokens[index].text);
-    if (expectedToken.includes(tokens[index].text)) {
-      return index;
-    } else {
+  private visitToken(expectedToken: any, required: boolean) {
+    this.nextIndex();
+    console.log("(" + this.index + ")\t", "Expecting Token(s):\t", expectedToken, "\tFound Token:\t", this.tokens[this.index].text);
+    if (!expectedToken.includes(this.tokens[this.index].text)) {
       if (required) {
-        let thisLine = tokens[index].line;
-        let i = index;
+        let thisLine = this.tokens[this.index].line;
+        let i = this.index;
         // Look for token on the rest of the line
-        while (i < tokens.length && tokens[i]?.line === thisLine) {
-          if (expectedToken.includes(tokens[i].text)) {
+        while (i < this.tokens.length && this.tokens[i]?.line === thisLine) {
+          if (expectedToken.includes(this.tokens[i].text)) {
             // Error
             Diagnostics.createFromToken(
-              "Expected: " + expectedToken + "\nFound: " + tokens[i].text,
-              tokens[i],
-              0
+              "Expected: " + expectedToken + "\nFound: " + this.tokens[i].text,
+              this.tokens[i],
+              DiagnosticSeverity.Error
             );
-            console.log("Located Token:\t\t" + tokens[i].text + "\tJumping Index");
-            return i;
+            console.log("(" + this.index + ")\t", "Located Token:\t\t" + this.tokens[i].text + "\tJumping Index To", i);
+            this.index = i;
+            return;
           } else {
             i++;
           }
         }
         // Error
         Diagnostics.createFromToken(
-          "Expected: " + expectedToken + "\nFound: " + tokens[index].text,
-          tokens[index],
-          0
+          "Expected: " + expectedToken + "\nFound: " + this.tokens[this.index].text,
+          this.tokens[this.index],
+          DiagnosticSeverity.Error
         );
-        return index;
       } else {
-        return index - 1;
+        this.index--;
       }
     }
   }
 
-  function visitType(index: number): number {
-    index = ignoreNonsemanticTokens(index);
-    console.log("Visiting Type\t\t\tCurrent Token:\t", tokens[index].text);
-    if (FPP.isMember(tokens[index].text, FPP.Types)) {
-      if (tokens[index].text === FPP.Keywords.string && lookAhead(index) === FPP.Keywords.size) {
-        index = ignoreNonsemanticTokens(++index);
-        index = visitExpression(++index);
+  private visitType() {
+    this.nextIndex();
+    console.log("(" + this.index + ")\t", "Visiting Type\t\t\tFound Token:\t", this.tokens[this.index].text);
+    if (FPP.isMember(this.tokens[this.index].text, FPP.Types)) {
+      if (this.tokens[this.index].text === FPP.Keywords.string && this.lookAhead([FPP.Keywords.size])) {
+        this.visitExpression();
       }
-      return index;
-    } else if (identifiers.has(tokens[index].text)) {
-      return visitQualifiedIdentifier(index);
-    }
-    // Error
-    // Temporarily allow if valid identifer until identifier reimplementation
-    if (Parser.isIdentifier(tokens[index].text)) {
-      return visitQualifiedIdentifier(index);
+    } else if (this.identifiers.has(this.tokens[this.index].text)) {
+      this.index--;
+      this.visitQualifiedIdentifier();
     } else {
-      Diagnostics.createFromToken("Invalid type: " + tokens[index].text, tokens[index], 0);
+      // Error
+      // Temporarily allow if valid identifer until identifier reimplementation
+      if (Parser.isIdentifier(this.tokens[this.index].text)) {
+        this.index--;
+        this.visitQualifiedIdentifier();
+      } else {
+        Diagnostics.createFromToken("Invalid type: " + this.tokens[this.index].text, this.tokens[this.index], DiagnosticSeverity.Error);
+      }
     }
-    return index;
   }
 
-  function visitString(index: number): number {
-    index = ignoreNonsemanticTokens(index);
-    console.log("Visiting String\t\t\tCurrent Token:\t", tokens[index].text);
-    if (tokens[index].tokenType !== FPP.TokenType.STRING) {
+  // TODO: Make visitTokenType
+  private visitString() {
+    this.nextIndex();
+    console.log("(" + this.index + ")\t", "Visiting String\t\tFound Token:\t", this.tokens[this.index].text);
+    if (this.tokens[this.index].tokenType === FPP.TokenType.STRING) {
+      while (this.tokens[this.index + 1]?.tokenType === FPP.TokenType.STRING) {
+        this.index++;
+      }
+    } else {
       // Error
       Diagnostics.createFromToken(
-        "String expected\nFound: " + tokens[index].text,
-        tokens[index],
-        0
+        "String expected\nFound: " + this.tokens[this.index].text,
+        this.tokens[this.index],
+        DiagnosticSeverity.Error
       );
     }
-    return index;
   }
 
   //------------------------\\ E X P R E S S I O N S //------------------------\\
 
-  function visitExpression(index: number): number {
-    index = ignoreNonsemanticTokens(index);
-    console.log("Visiting Expression\t\tCurrent Token:\t", tokens[index].text);
-
-    switch (tokens[index].text) {
+  private visitExpression() {
+    this.nextIndex();
+    console.log("(" + this.index + ")\t", "Visiting Expression\t\tFound Token:\t", this.tokens[this.index].text);
+    switch (this.tokens[this.index].text) {
       case FPP.Operators.MINUS:
-        return visitExpression(++index);
+        this.visitExpression();
+        return;
       case FPP.Operators.LPAREN:
-        return visitParenthesisExpression(++index);
+        this.visitParenthesisExpression();
+        return;
       case FPP.Operators.LBRACKET:
-        return visitArrayExpression(index);
+        this.visitArrayExpression();
+        return;
       default:
-        if (Parser.isIdentifier(tokens[index].text)) {
-          index = visitQualifiedIdentifier(index);
-        } else if (tokens[index].tokenType === FPP.TokenType.NUMBER) {
+        if (this.tokens[this.index].tokenType === FPP.TokenType.STRING) {
+          while (this.tokens[this.index + 1]?.tokenType === FPP.TokenType.STRING) {
+            this.index++;
+          }
+          return;
+        }
+        if (Parser.isIdentifier(this.tokens[this.index].text)) {
+          this.index--;
+          this.visitQualifiedIdentifier();
+        } else if (this.tokens[this.index].tokenType === FPP.TokenType.NUMBER) {
         } else {
           // Error
           Diagnostics.createFromToken(
-            "Invalid expression: " + tokens[index].text,
-            tokens[index],
-            0
+            "Invalid expression: " + this.tokens[this.index].text,
+            this.tokens[this.index],
+            DiagnosticSeverity.Error
           );
         }
     }
 
-    switch (lookAhead(index)) {
-      case FPP.Operators.MINUS:
-      case FPP.Operators.PLUS:
-      case FPP.Operators.MULT:
-      case FPP.Operators.DIV:
-        index = ignoreNonsemanticTokens(++index);
-        return visitExpression(++index);
+    if (this.lookAhead([FPP.Operators.MINUS, FPP.Operators.PLUS, FPP.Operators.MULT, FPP.Operators.DIV])) {
+      this.visitExpression();
     }
-
-    return index;
   }
 
-  function visitParenthesisExpression(index: number): number {
-    console.log("Visiting Parenthesis Expression\tCurrent Token:\t", tokens[index].text);
-    index = visitExpression(++index);
-    index = visitToken(++index, FPP.Operators.RPAREN, true);
-    return index;
+  private visitParenthesisExpression() {
+    console.log("(" + this.index + ")\t", "Visiting Parenthesis Expression\tCurrent Token:\t", this.tokens[this.index].text);
+    this.nextIndex();
+    this.visitExpression();
+    this.visitToken(FPP.Operators.RPAREN, true);
   }
 
-  function visitArrayExpression(index: number): number {
-    console.log("Visiting Array Expression\tCurrent Token:\t", tokens[index].text);
-    index = visitExpression(++index);
-    while (lookAhead(index) !== FPP.Operators.RBRACKET) {
-      index = visitToken(++index, FPP.Operators.COMMA, true);
-      index = visitExpression(++index);
+  private visitArrayExpression() {
+    console.log("(" + this.index + ")\t", "Visiting Array Expression\tCurrent Token:\t", this.tokens[this.index].text);
+    this.visitExpression();
+    while (!this.lookAhead([FPP.Operators.RBRACKET])) {
+      this.visitToken(FPP.Operators.COMMA, true);
+      this.visitExpression();
     }
-    index = visitToken(++index, FPP.Operators.RBRACKET, true);
-    return index;
   }
 
   //------------------------\\ I D E N T I F I E R S //------------------------\\
 
   // TODO: Implement checking for qual-ident of a certain type
-  function visitQualifiedIdentifier(index: number): number {
-    index = visitIdentifier(index);
-    while (lookAhead(index) === FPP.Operators.DOT) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitIdentifier(++index);
+  private visitQualifiedIdentifier() {
+    console.log("(" + this.index + ")\t", "Visiting Qualified Identifier\tCurrent Token:\t", this.tokens[this.index].text);
+    this.visitIdentifier();
+    while (this.lookAhead([FPP.Operators.DOT])) {
+      this.visitIdentifier();
     }
-    return index;
   }
 
-  function visitIdentifier(index: number): number {
-    index = ignoreNonsemanticTokens(index);
+  private visitIdentifier() {
+    this.nextIndex();
     // TODO: Check for qual-ident
-    if (identifiers.has(tokens[index].text)) {
-      console.log("Identifier Found\t\tCurrent Token:\t", tokens[index].text);
-      tokens[index].tokenType = identifiers.get(tokens[index].text)?.[1] as FPP.TokenType;
-      tokens[index].tokenModifiers = identifiers.get(tokens[index].text)?.[2] as FPP.TokenType[];
-      return index;
+    if (this.identifiers.has(this.tokens[this.index].text)) {
+      console.log("(" + this.index + ")\t", "Identifier Found\t\tCurrent Token:\t", this.tokens[this.index].text);
+      this.semanticTokens.push({
+        line: this.tokens[this.index].line,
+        startCharacter: this.tokens[this.index].startCharacter,
+        length: this.tokens[this.index].length,
+        tokenType: this.identifiers.get(this.tokens[this.index].text)?.[1] as FPP.TokenType,
+        tokenModifiers: this.identifiers.get(this.tokens[this.index].text)?.[2] as FPP.ModifierType[],
+      });
+      // this.tokens[this.index].tokenType = this.identifiers.get(this.tokens[this.index].text)?.[1] as FPP.TokenType;
+      // this.tokens[this.index].tokenModifiers = this.identifiers.get(this.tokens[this.index].text)?.[2] as FPP.TokenType[];
     } else {
       // Error
-      console.log("Unknown Identifier\t\tCurrent Token:\t", tokens[index].text);
+      console.log("(" + this.index + ")\t", "Unknown Identifier\t\tCurrent Token:\t", this.tokens[this.index].text);
       // TODO: Add after reimplementation
-      // Diagnostics.createFromToken("Unknown identifier: " + tokens[index].text, tokens[index], 0);
-      return index;
+      // Diagnostics.createFromToken("Unknown identifier: " + this.tokens[this.index].text, this.tokens[this.index], DiagnosticSeverity.Error);
     }
   }
 
-  function visitIdentifierDef(
-    index: number,
-    type: FPP.TokenType,
-    modifiers: FPP.TokenType[]
-  ): number {
-    index = ignoreNonsemanticTokens(index);
-    tokens[index].tokenType = type;
-    tokens[index].tokenModifiers = modifiers.slice();
-    if (Parser.isIdentifier(tokens[index].text)) {
-      if (identifiers.has(tokens[index].text)) {
+  private visitIdentifierDef(type: FPP.TokenType, modifiers: FPP.ModifierType[]) {
+    this.nextIndex();
+    if (Parser.isIdentifier(this.tokens[this.index].text)) {
+      if (this.identifiers.has(this.tokens[this.index].text)) {
         // Error
-        console.log("Duplicate Identifier\t\tCurrent Token:\t", tokens[index].text);
+        console.log("(" + this.index + ")\t", "Duplicate Identifier\t\tCurrent Token:\t", this.tokens[this.index].text);
         // Diagnostics.createFromToken(
-        //   "Cannot redeclare variable: " + tokens[index].text,
-        //   tokens[index],
-        //   0
+        //   "Cannot redeclare variable: " + this.tokens[this.index].text,
+        //   this.tokens[this.index],
+        //   DiagnosticSeverity.Error
         // );
       } else {
-        console.log("New Identifier\t\t\tCurrent Token:\t", tokens[index].text);
+        console.log("(" + this.index + ")\t", "New Identifier\t\t\tCurrent Token:\t", this.tokens[this.index].text);
+        this.tokens[this.index].tokenType = type;
+        this.tokens[this.index].tokenModifiers = modifiers.slice();
         let i;
-        if ((i = modifiers.findIndex((mod) => mod === FPP.TokenType.DECLARATION)) !== -1) {
+        if ((i = modifiers.findIndex((mod) => mod === FPP.ModifierType.DECLARATION)) !== -1) {
           delete modifiers[i];
-          identifiers.set(tokens[index].text, [
-            currentScope[currentScope.length - 1][0],
-            type,
-            modifiers.slice(),
-          ]);
-          switch (tokens[index].tokenType) {
+          this.identifiers.set(this.tokens[this.index].text, [this.currentScope[this.currentScope.length - 1][0], type, modifiers.slice()]);
+          switch (this.tokens[this.index].tokenType) {
             case FPP.TokenType.ENUM:
             case FPP.TokenType.COMPONENT:
             case FPP.TokenType.NAMESPACE:
-              console.log("New Scope\t\t\tCurrent Token:\t", tokens[index].text);
-              currentScope.push([tokens[index].text, tokens[index].tokenType]);
+              console.log("(" + this.index + ")\t", "New Scope\t\t\tCurrent Token:\t", this.tokens[this.index].text);
+              this.currentScope.push([this.tokens[this.index].text, this.tokens[this.index].tokenType]);
             default:
               break;
           }
         } else {
-          identifiers.set(tokens[index].text, [
-            currentScope[currentScope.length - 1][0],
-            type,
-            modifiers.slice(),
-          ]);
+          this.identifiers.set(this.tokens[this.index].text, [this.currentScope[this.currentScope.length - 1][0], type, modifiers.slice()]);
         }
+
+        this.semanticTokens.push({
+          line: this.tokens[this.index].line,
+          startCharacter: this.tokens[this.index].startCharacter,
+          length: this.tokens[this.index].length,
+          tokenType: this.tokens[this.index].tokenType,
+          tokenModifiers: this.tokens[this.index].tokenModifiers,
+        });
       }
     } else {
       // Error
-      console.log("Invalid Identifier\t\tCurrent Token:\t", tokens[index].text);
-      Diagnostics.createFromToken("Invalid Identifier: " + tokens[index].text, tokens[index], 0);
-      return index;
+      console.log("(" + this.index + ")\t", "Invalid Identifier\t\tCurrent Token:\t", this.tokens[this.index].text);
+      Diagnostics.createFromToken("Invalid Identifier: " + this.tokens[this.index].text, this.tokens[this.index], DiagnosticSeverity.Error);
     }
-    return index;
   }
 
   //---------------------------------------------------------------------------\\
@@ -323,187 +338,158 @@ export module Visitor {
   // Abstract Type Definitions
   // Syntax:
   // type identifier
-  function visitTypeDef(index: number): number {
-    console.log("Visiting Type Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.TYPE, [
-      FPP.TokenType.DECLARATION,
-      FPP.TokenType.ABSTRACT,
-    ]);
-    return index;
+  private visitTypeDef() {
+    console.log("(" + this.index + ")\t", "Visiting Type Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.TYPE, [FPP.ModifierType.DECLARATION, FPP.ModifierType.ABSTRACT]);
   }
 
   // Array Definitions
   // Syntax:
   // array identifier = [ expression ] type-name [ default expression ] [ format string-literal ]
-  function visitArrayDef(index: number): number {
-    console.log("Visiting Array Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.ARRAY, [FPP.TokenType.DECLARATION]);
-    index = visitToken(++index, FPP.Operators.EQ, true);
-    index = visitToken(++index, FPP.Operators.LBRACKET, true);
-    index = visitExpression(++index);
-    index = visitToken(++index, FPP.Operators.RBRACKET, true);
-    index = visitType(++index);
-    if (lookAhead(index) === FPP.Keywords.default) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+  private visitArrayDef() {
+    console.log("(" + this.index + ")\t", "Visiting Array Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.ARRAY, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.EQ, true);
+    this.visitToken(FPP.Operators.LBRACKET, true);
+    this.visitExpression();
+    this.visitToken(FPP.Operators.RBRACKET, true);
+    this.visitType();
+    if (this.lookAhead([FPP.Keywords.default])) {
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.format) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitString(++index);
+    if (this.lookAhead([FPP.Keywords.format])) {
+      this.visitString();
     }
-    return index;
   }
 
   // Component Definitions
   // Syntax:
   // component-kind component identifier { component-member-sequence }
-  function visitComponentDef(index: number): number {
-    console.log("Visiting Component Definition\tCurrent Token:\t", tokens[index]?.text);
-    index = visitToken(++index, FPP.Keywords.component, true);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.COMPONENT, [
-      FPP.TokenType.DECLARATION,
-    ]);
-    index = visitToken(++index, FPP.Operators.LBRACE, true);
-    index = visitComponentMemberSequence(++index);
-    return index;
+  private visitComponentDef() {
+    console.log("(" + this.index + ")\t", "Visiting Component Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitToken(FPP.Keywords.component, true);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.COMPONENT, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.LBRACE, true);
+    this.visitComponentMemberSequence();
   }
 
   // Component Instance Definitions
   // Syntax:
   // instance identifier : qual-ident base id expression [ at string-literal ] [ queue size expression ]
   // [ stack size expression ] [ priority expression ] [ cpu expression ] [ { init-specifier-sequence } ]
-  function visitComponentInstanceDef(index: number): number {
-    console.log("Visiting Instance Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.INSTANCE, [FPP.TokenType.DECLARATION]);
-    index = visitToken(++index, FPP.Operators.COLON, true);
-    index = visitQualifiedIdentifier(++index);
-    index = visitToken(++index, FPP.Keywords.base, true);
-    index = visitToken(++index, FPP.Keywords.id, true);
-    index = visitExpression(++index);
-    if (lookAhead(index) === FPP.Keywords.at) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitString(++index);
+  private visitComponentInstanceDef() {
+    console.log("(" + this.index + ")\t", "Visiting Instance Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.INSTANCE, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.COLON, true);
+    this.visitQualifiedIdentifier();
+    this.visitToken(FPP.Keywords.base, true);
+    this.visitToken(FPP.Keywords.id, true);
+    this.visitExpression();
+    if (this.lookAhead([FPP.Keywords.at])) {
+      this.visitString();
     }
-    if (lookAhead(index) === FPP.Keywords.queue) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitToken(++index, FPP.Keywords.size, true);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.queue])) {
+      this.visitToken(FPP.Keywords.size, true);
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.stack) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitToken(++index, FPP.Keywords.size, true);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.stack])) {
+      this.visitToken(FPP.Keywords.size, true);
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.priority) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.priority])) {
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.cpu) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.cpu])) {
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Operators.LBRACE) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitInitSpecSequence(++index);
+    if (this.lookAhead([FPP.Operators.LBRACE])) {
+      this.visitInitSpecSequence();
     }
-    return index;
   }
 
   // Constant Definitions
   // Syntax:
   // constant identifier = expression
-  function visitConstantDef(index: number): number {
-    console.log("Visiting Constant Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.CONSTANT, [FPP.TokenType.DECLARATION]);
-    index = visitToken(++index, FPP.Operators.EQ, true);
-    index = visitExpression(++index);
-    return index;
+  private visitConstantDef() {
+    console.log("(" + this.index + ")\t", "Visiting Constant Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.CONSTANT, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.EQ, true);
+    this.visitExpression();
   }
 
   // Enum Definitions
   // Syntax:
   // enum identifier [ : type-name ] { enum-constant-sequence } [ default expression ]
-  function visitEnumDef(index: number): number {
-    console.log("Visiting Enum Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.ENUM, [FPP.TokenType.DECLARATION]);
-    if (lookAhead(index) === FPP.Operators.COLON) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitType(++index);
+  private visitEnumDef() {
+    console.log("(" + this.index + ")\t", "Visiting Enum Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.ENUM, [FPP.ModifierType.DECLARATION]);
+    if (this.lookAhead([FPP.Operators.COLON])) {
+      this.visitType();
     }
-    index = visitToken(++index, FPP.Operators.LBRACE, true);
-    index = visitEnumConstantSequence(index);
-    if (lookAhead(index) === FPP.Keywords.default) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    this.visitToken(FPP.Operators.LBRACE, true);
+    this.visitEnumConstantSequence();
+    if (this.lookAhead([FPP.Keywords.default])) {
+      this.visitExpression();
     }
-    return index;
   }
 
   // Enumerated Constant Definitions
   // Syntax:
   // identifier [ = expression ]
-  function visitEnumConstantDef(index: number): number {
-    console.log("Visiting Enum Constant Def\tCurrent Token:\t", tokens[index].text);
-    index = visitIdentifierDef(index, FPP.KeywordTokensMap.ENUMMEMBER, [FPP.TokenType.DECLARATION]);
-    if (lookAhead(index) === FPP.Operators.EQ) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+  private visitEnumConstantDef() {
+    console.log("(" + this.index + ")\t", "Visiting Enum Constant Def\tCurrent Token:\t", this.tokens[this.index].text);
+    this.index--;
+    this.visitIdentifierDef(FPP.KeywordTokensMap.ENUMMEMBER, [FPP.ModifierType.DECLARATION]);
+    if (this.lookAhead([FPP.Operators.EQ])) {
+      this.visitExpression();
     }
-    return index;
   }
 
   // Module Definitions
   // Syntax:
   // module identifier { module-member-sequence }
-  function visitModuleDef(index: number): number {
-    console.log("Visiting Module Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.MODULE, [FPP.TokenType.DECLARATION]);
-    index = visitToken(++index, FPP.Operators.LBRACE, true);
-    index = visitModuleMemberSequence(++index);
-    return index;
+  private visitModuleDef() {
+    console.log("(" + this.index + ")\t", "Visiting Module Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.MODULE, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.LBRACE, true);
+    this.visitModuleMemberSequence();
   }
 
   // Port Definitions
   // Syntax:
   // port identifier [ ( param-list ) ] [ -> type-name ]
-  function visitPortDef(index: number): number {
-    console.log("Visiting Port Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
-    if (lookAhead(index) === FPP.Operators.LPAREN) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitParamList(++index);
+  private visitPortDef() {
+    console.log("(" + this.index + ")\t", "Visiting Port Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.PORT, [FPP.ModifierType.DECLARATION]);
+    if (this.lookAhead([FPP.Operators.LPAREN])) {
+      this.visitParamList();
     }
-    if (lookAhead(index) === FPP.Operators.RARROW) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitType(++index);
+    if (this.lookAhead([FPP.Operators.RARROW])) {
+      this.visitType();
     }
-    return index;
   }
 
   // Struct Definitions
   // Syntax:
   // struct identifier { struct-type-member-sequence } [ default expression ]
-  function visitStructDef(index: number): number {
-    console.log("Visiting Struct Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.STRUCT, [FPP.TokenType.DECLARATION]);
-    index = visitToken(++index, FPP.Operators.LBRACE, true);
-    index = visitStructMemberSequence(++index);
-    if (lookAhead(index) === FPP.Keywords.default) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+  private visitStructDef() {
+    console.log("(" + this.index + ")\t", "Visiting Struct Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.STRUCT, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.LBRACE, true);
+    this.visitStructMemberSequence();
+    if (this.lookAhead([FPP.Keywords.default])) {
+      this.visitExpression();
     }
-    return index;
   }
 
   // Topology Definitions
   // Syntax:
   // topology identifier { topology-member-sequence }
-  function visitTopologyDef(index: number): number {
-    console.log("Visiting Topology Definition\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.TOPOLOGY, [FPP.TokenType.DECLARATION]);
-    index = visitToken(++index, FPP.Operators.LBRACE, true);
-    index = visitTopologyMemberSequence(++index);
-    return index;
+  private visitTopologyDef() {
+    console.log("(" + this.index + ")\t", "Visiting Topology Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.TOPOLOGY, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.LBRACE, true);
+    this.visitTopologyMemberSequence();
   }
 
   //---------------------------------------------------------------------------\\
@@ -514,46 +500,36 @@ export module Visitor {
   // Command Specifiers
   // Syntax:
   // command-kind command identifier [ ( param-list ) ] [ opcode expression ] [ priority expression ] [ queue-full-behavior ]
-  function visitCommandSpec(index: number): number {
-    console.log("Visiting Command Specifier\tNext Token:\t", tokens[index + 1]?.text);
+  private visitCommandSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Command Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
     let queueFullSpec = false;
-    if (tokens[index].text === FPP.Keywords.async) {
+    if (this.tokens[this.index].text === FPP.Keywords.async) {
       queueFullSpec = true;
     }
-    index = visitToken(++index, FPP.Keywords.command, true);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.SPECIFIER, [
-      FPP.TokenType.DECLARATION,
-    ]);
-    if (lookAhead(index) === FPP.Operators.LPAREN) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitParamList(++index);
+    this.visitToken(FPP.Keywords.command, true);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.SPECIFIER, [FPP.ModifierType.DECLARATION]);
+    if (this.lookAhead([FPP.Operators.LPAREN])) {
+      this.visitParamList();
     }
-    if (lookAhead(index) === FPP.Keywords.opcode) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.opcode])) {
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.priority) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.priority])) {
+      this.visitExpression();
     }
     if (queueFullSpec) {
-      index = visitToken(
-        ++index,
-        [FPP.Keywords.assert, FPP.Keywords.block, FPP.Keywords.drop],
-        false
-      );
+      this.visitToken([FPP.Keywords.assert, FPP.Keywords.block, FPP.Keywords.drop], false);
     }
-    return index;
   }
 
   // Component Instance Specifiers
   // Syntax:
   // [ private ] instance qual-ident
   // Note: qual-ident must refer to a component instance
-  function visitComponentInstanceSpec(index: number): number {
-    console.log("Visiting Component Instance Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitQualifiedIdentifier(++index);
-    return index;
+  private visitComponentInstanceSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Component Instance Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
+    // TODO
+    this.visitQualifiedIdentifier();
   }
 
   // Connection Graph Specifiers
@@ -561,104 +537,78 @@ export module Visitor {
   // connections identifier { connection-sequence }
   // pattern-kind connections instance qual-ident [ { instance-sequence } ]
   // Note: qual-ident must refer to a component instance that is available in the enclosing topology
-  function visitConnectionGraphSpec(index: number): number {
-    console.log("Visiting Connection Graph Specifier\tCurrent Token:\t", tokens[index].text);
-    if (tokens[index].text === FPP.Keywords.connections) {
-      index = visitIdentifierDef(++index, FPP.KeywordTokensMap.SPECIFIER, [
-        FPP.TokenType.DECLARATION,
-      ]);
-      index = visitToken(++index, FPP.Operators.LBRACE, true);
-      index = visitConnectionSequence(index);
+  private visitConnectionGraphSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Connection Graph Specifier\tCurrent Token:\t", this.tokens[this.index].text);
+    if (this.tokens[this.index].text === FPP.Keywords.connections) {
+      this.visitIdentifierDef(FPP.KeywordTokensMap.SPECIFIER, [FPP.ModifierType.DECLARATION]);
+      this.visitToken(FPP.Operators.LBRACE, true);
+      this.visitConnectionSequence();
     } else {
-      index = visitToken(++index, FPP.Keywords.connections, true);
-      index = visitToken(++index, FPP.Keywords.instance, true);
-      index = visitQualifiedIdentifier(++index);
-      if (lookAhead(index) === FPP.Operators.LBRACE) {
-        index = ignoreNonsemanticTokens(++index);
-        index = visitInstanceSequence(++index);
+      this.visitToken(FPP.Keywords.connections, true);
+      this.visitToken(FPP.Keywords.instance, true);
+      this.visitQualifiedIdentifier();
+      if (this.lookAhead([FPP.Operators.LBRACE])) {
+        this.visitInstanceSequence();
       }
     }
-    return index;
   }
 
   // Event Specifiers
   // Syntax:
   // event identifier [ ( param-list ) ] severity severity [ id expression ] format string-literal [ throttle expression ]
-  function visitEventSpec(index: number): number {
-    console.log("Visiting Event Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.SPECIFIER, [
-      FPP.TokenType.DECLARATION,
-    ]);
-    if (lookAhead(index) === FPP.Operators.LPAREN) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitParamList(++index);
+  private visitEventSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Event Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.SPECIFIER, [FPP.ModifierType.DECLARATION]);
+    if (this.lookAhead([FPP.Operators.LPAREN])) {
+      this.visitParamList();
     }
-    index = visitToken(++index, FPP.Keywords.severity, true);
-    if (lookAhead(index) === FPP.Keywords.activity || lookAhead(index) === FPP.Keywords.warning) {
-      index = ignoreNonsemanticTokens(++index);
-      visitToken(++index, [FPP.Keywords.high, FPP.Keywords.low], true);
+    this.visitToken(FPP.Keywords.severity, true);
+    if (this.lookAhead([FPP.Keywords.activity]) || this.lookAhead([FPP.Keywords.warning])) {
+      this.visitToken([FPP.Keywords.high, FPP.Keywords.low], true);
     } else {
-      index = visitToken(
-        ++index,
-        [FPP.Keywords.command, FPP.Keywords.diagnostic, FPP.Keywords.fatal],
-        true
-      );
+      this.visitToken([FPP.Keywords.command, FPP.Keywords.diagnostic, FPP.Keywords.fatal], true);
     }
-    if (lookAhead(index) === FPP.Keywords.id) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.id])) {
+      this.visitExpression();
     }
-    index = visitToken(++index, FPP.Keywords.format, true);
-    index = visitString(++index);
-    if (lookAhead(index) === FPP.Keywords.throttle) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    this.visitToken(FPP.Keywords.format, true);
+    this.visitString();
+    if (this.lookAhead([FPP.Keywords.throttle])) {
+      this.visitExpression();
     }
-    return index;
   }
 
   // Include Specifiers
   // Syntax:
   // include string-literal
-  function visitIncludeSpec(index: number): number {
-    console.log("Visiting Include Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitString(++index);
-    return index;
+  private visitIncludeSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Include Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitString();
   }
 
   // Init Specifiers
   // Syntax:
   // phase expression string-literal
-  function visitInitSpec(index: number): number {
-    console.log("Visiting Init Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitExpression(++index);
-    index = visitString(++index);
-    return index;
+  private visitInitSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Init Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitExpression();
+    this.visitString();
   }
 
   // Internal Port Specifiers
   // Syntax:
   // internal port identifier [ ( param-list ) ] [ priority expression ] [ queue-full-behavior ]
-  function visitInternalPortSpec(index: number): number {
-    console.log("Visiting Internal Port Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitToken(++index, FPP.Keywords.port, true);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.SPECIFIER, [
-      FPP.TokenType.DECLARATION,
-    ]);
-    if (lookAhead(index) === FPP.Operators.LPAREN) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitParamList(++index);
+  private visitInternalPortSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Internal Port Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitToken(FPP.Keywords.port, true);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.SPECIFIER, [FPP.ModifierType.DECLARATION]);
+    if (this.lookAhead([FPP.Operators.LPAREN])) {
+      this.visitParamList();
     }
-    if (lookAhead(index) === FPP.Keywords.priority) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.priority])) {
+      this.visitExpression();
     }
-    index = visitToken(
-      ++index,
-      [FPP.Keywords.assert, FPP.Keywords.block, FPP.Keywords.drop],
-      false
-    );
-    return index;
+    this.visitToken([FPP.Keywords.assert, FPP.Keywords.block, FPP.Keywords.drop], false);
   }
 
   // Location Specifiers
@@ -669,87 +619,71 @@ export module Visitor {
   // locate port qual-ident at string-literal
   // locate topology qual-ident at string-literal
   // locate type qual-ident at string-literal
-  function visitLocationSpec(index: number): number {
-    console.log("Visiting Location Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitToken(
-      ++index,
-      [
-        FPP.Keywords.instance,
-        FPP.Keywords.component,
-        FPP.Keywords.constant,
-        FPP.Keywords.port,
-        FPP.Keywords.topology,
-        FPP.Keywords.type,
-      ],
+  private visitLocationSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Location Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitToken(
+      [FPP.Keywords.instance, FPP.Keywords.component, FPP.Keywords.constant, FPP.Keywords.port, FPP.Keywords.topology, FPP.Keywords.type],
       true
     );
-    index = visitQualifiedIdentifier(++index);
-    index = visitToken(++index, FPP.Keywords.at, true);
-    index = visitString(++index);
-    return index;
+    this.visitQualifiedIdentifier();
+    this.visitToken(FPP.Keywords.at, true);
+    this.visitString();
   }
 
   // Parameter Specifiers
   // Syntax:
   // param identifier : type-name [ default expression ] [ id expression ] [ set opcode expression ] [ save opcode expression ]
-  function visitParamSpec(index: number): number {
-    console.log("Visiting Parameter Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.SPECIFIER, [
-      FPP.TokenType.DECLARATION,
-    ]);
-    index = visitToken(++index, FPP.Operators.COLON, true);
-    index = visitType(++index);
-    if (lookAhead(index) === FPP.Keywords.default) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+  private visitParamSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Parameter Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.SPECIFIER, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.COLON, true);
+    this.visitType();
+    if (this.lookAhead([FPP.Keywords.default])) {
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.id) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.id])) {
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.set) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitToken(++index, FPP.Keywords.opcode, true);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.set])) {
+      this.visitToken(FPP.Keywords.opcode, true);
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.save) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitToken(++index, FPP.Keywords.opcode, true);
-      index = visitExpression(++index);
+    if (this.lookAhead([FPP.Keywords.save])) {
+      this.visitToken(FPP.Keywords.opcode, true);
+      this.visitExpression();
     }
-    return index;
   }
 
   // Port Instance Specifiers
   // Syntax:
   // general-port-kind port identifier : [ [ expression ] ] port-instance-type [ priority expression ] [ queue-full-behavior ]
   // special-port-kind port identifier
-  function visitPortInstanceSpec(index: number): number {
-    console.log("Visiting Port Instance Specifier\tCurrent Token:\t", tokens[index].text);
+  private visitPortInstanceSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Port Instance Specifier\tCurrent Token:\t", this.tokens[this.index].text);
     let queueFullSpec = false;
     let generalPortKind = false;
-    switch (tokens[index].text) {
+    switch (this.tokens[this.index].text) {
       case FPP.Keywords.async:
         queueFullSpec = true;
       case FPP.Keywords.guarded:
       case FPP.Keywords.sync:
-        index = visitToken(++index, FPP.Keywords.input, true);
+        this.visitToken(FPP.Keywords.input, true);
         generalPortKind = true;
         break;
       case FPP.Keywords.output:
         generalPortKind = true;
         break;
       case FPP.Keywords.command:
-        index = visitToken(++index, [FPP.Keywords.recv, FPP.Keywords.reg, FPP.Keywords.resp], true);
+        this.visitToken([FPP.Keywords.recv, FPP.Keywords.reg, FPP.Keywords.resp], true);
         break;
       case FPP.Keywords.param:
-        index = visitToken(++index, [FPP.Keywords.set, FPP.Keywords.get], true);
+        this.visitToken([FPP.Keywords.set, FPP.Keywords.get], true);
         break;
       case FPP.Keywords.text:
-        index = visitToken(++index, FPP.Keywords.event, true);
+        this.visitToken(FPP.Keywords.event, true);
         break;
       case FPP.Keywords.time:
-        index = visitToken(++index, FPP.Keywords.get, true);
+        this.visitToken(FPP.Keywords.get, true);
         break;
       case FPP.Keywords.telemetry:
       case FPP.Keywords.event:
@@ -757,96 +691,76 @@ export module Visitor {
       default:
       // Error
     }
-    index = visitToken(++index, FPP.Keywords.port, true);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.PORT, [FPP.TokenType.DECLARATION]);
+    this.visitToken(FPP.Keywords.port, true);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.PORT, [FPP.ModifierType.DECLARATION]);
     if (generalPortKind) {
-      index = visitToken(++index, FPP.Operators.COLON, true);
-      if (lookAhead(index) === FPP.Operators.LBRACKET) {
-        index = ignoreNonsemanticTokens(++index);
-        index = visitExpression(++index);
-        index = visitToken(++index, FPP.Operators.RBRACKET, true);
+      this.visitToken(FPP.Operators.COLON, true);
+      if (this.lookAhead([FPP.Operators.LBRACKET])) {
+        this.visitExpression();
+        this.visitToken(FPP.Operators.RBRACKET, true);
       }
-      if (lookAhead(index) === FPP.Keywords.serial) {
-        index = ignoreNonsemanticTokens(++index);
-      } else {
-        index = visitQualifiedIdentifier(++index);
+      if (!this.lookAhead([FPP.Keywords.serial])) {
+        this.visitQualifiedIdentifier();
       }
-      if (lookAhead(index) === FPP.Keywords.priority) {
-        index = ignoreNonsemanticTokens(++index);
-        index = visitExpression(++index);
+      if (this.lookAhead([FPP.Keywords.priority])) {
+        this.visitExpression();
       }
       if (queueFullSpec) {
-        index = visitToken(
-          ++index,
-          [FPP.Keywords.assert, FPP.Keywords.block, FPP.Keywords.drop],
-          false
-        );
+        this.visitToken([FPP.Keywords.assert, FPP.Keywords.block, FPP.Keywords.drop], false);
       }
     }
-    return index;
   }
 
   // Port Matching Specifiers
   // Syntax:
   // [ private ] instance qual-ident
-  function visitPortMatchingSpec(index: number): number {
-    console.log("Visiting Port Matching Specifier\tNext Token:\t", tokens[index + 1]?.text);
+  private visitPortMatchingSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Port Matching Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
     // TODO: Check private
-    index = visitIdentifier(++index);
-    index = visitToken(++index, FPP.Keywords.with, true);
-    index = visitIdentifier(++index);
-    return index;
+    this.visitIdentifier();
+    this.visitToken(FPP.Keywords.with, true);
+    this.visitIdentifier();
   }
 
   // Telemetry Channel Specifiers
   // Syntax:
   // telemetry identifier : type-name [ id expression ] [ update telemetry-update ] [ format string-literal ]
   // [ low { telemetry-limit-sequence } ] [ high { telemetry-limit-sequence } ]
-  function visitTelemetryChannelSpec(index: number): number {
-    console.log("Visiting Telemetry Specifier\tNext Token:\t", tokens[index + 1]?.text);
-    index = visitIdentifierDef(++index, FPP.KeywordTokensMap.SPECIFIER, [
-      FPP.TokenType.DECLARATION,
-    ]);
-    index = visitToken(++index, FPP.Operators.COLON, true);
-    index = visitType(++index);
-    if (lookAhead(index) === FPP.Keywords.id) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
+  private visitTelemetryChannelSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Telemetry Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.visitIdentifierDef(FPP.KeywordTokensMap.SPECIFIER, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.COLON, true);
+    this.visitType();
+    if (this.lookAhead([FPP.Keywords.id])) {
+      this.visitExpression();
     }
-    if (lookAhead(index) === FPP.Keywords.update) {
-      index = ignoreNonsemanticTokens(++index);
-      if (lookAhead(index) === FPP.Keywords.always) {
-        index = ignoreNonsemanticTokens(++index);
-      } else if (lookAhead(index) === FPP.Keywords.on) {
-        index = ignoreNonsemanticTokens(++index);
-        index = visitToken(++index, FPP.Keywords.change, true);
+    if (this.lookAhead([FPP.Keywords.update])) {
+      if (this.lookAhead([FPP.Keywords.always])) {
+      } else if (this.lookAhead([FPP.Keywords.on])) {
+        this.visitToken(FPP.Keywords.change, true);
       }
     }
-    if (lookAhead(index) === FPP.Keywords.format) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitString(++index);
+    if (this.lookAhead([FPP.Keywords.format])) {
+      this.visitString();
     }
-    if (lookAhead(index) === FPP.Keywords.low) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitToken(++index, FPP.Operators.LBRACE, true);
-      index = visitTelemetrySequence(++index);
+    if (this.lookAhead([FPP.Keywords.low])) {
+      this.visitToken(FPP.Operators.LBRACE, true);
+      this.visitTelemetryLimitSequence();
     }
-    if (lookAhead(index) === FPP.Keywords.high) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitToken(++index, FPP.Operators.LBRACE, true);
-      index = visitTelemetrySequence(++index);
+    if (this.lookAhead([FPP.Keywords.high])) {
+      this.visitToken(FPP.Operators.LBRACE, true);
+      this.visitTelemetryLimitSequence();
     }
-    return index;
   }
 
   // Topology Import Specifiers
   // Syntax:
   // import qual-ident
   // Note: qual-ident must refer to a topology definition
-  function visitTopologyImportSpec(index: number): number {
-    console.log("Visiting Topology Import Specifier\tCurrent Token:\t", tokens[index].text);
-    index = visitQualifiedIdentifier(++index);
-    return ++index;
+  private visitTopologyImportSpec() {
+    console.log("(" + this.index + ")\t", "Visiting Topology Import Specifier\tCurrent Token:\t", this.tokens[this.index].text);
+    this.visitQualifiedIdentifier();
+    return;
   }
 
   //---------------------------------------------------------------------------\\
@@ -856,280 +770,245 @@ export module Visitor {
 
   // Enum Constant Sequence
   // Used in enum definition
-  function visitEnumConstantSequence(index: number): number {
-    console.log("Visiting enum-constant-sequence\tNext Token:\t", tokens[index + 1]?.text);
-    while (++index < tokens.length && tokens[index]?.text !== FPP.Operators.RBRACE) {
-      index = visitEnumConstantDef(index);
-      index = visitToken(++index, FPP.Operators.COMMA, false);
+  private visitEnumConstantSequence() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      this.nextIndex();
+      console.log("(" + this.index + ")\t", "Inside enum-constant-sequence\tCurrent Token:\t", this.tokens[this.index]?.text);
+      this.visitEnumConstantDef();
+      this.visitToken(FPP.Operators.COMMA, false);
     }
-    currentScope.pop();
-    return index;
+    this.currentScope.pop();
   }
 
   // Component Member Sequence
   // Used in component definition
-  function visitComponentMemberSequence(index: number): number {
-    console.log("Visiting component-member-seq\tCurrent Token:\t", tokens[index].text);
-    while (index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
-      switch (tokens[index].text) {
+  private visitComponentMemberSequence() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      this.nextIndex();
+      console.log("(" + this.index + ")\t", "Inside component-member-seq\tCurrent Token:\t", this.tokens[this.index].text);
+      switch (this.tokens[this.index].text) {
         // An array definition
         case FPP.Keywords.array:
-          index = visitArrayDef(index);
+          this.visitArrayDef();
           break;
         // A constant definition
         case FPP.Keywords.constant:
-          index = visitConstantDef(index);
+          this.visitConstantDef();
           break;
         // An enum definition
         case FPP.Keywords.enum:
-          index = visitEnumDef(index);
+          this.visitEnumDef();
           break;
         // A struct definition
         case FPP.Keywords.struct:
-          index = visitStructDef(index);
+          this.visitStructDef();
           break;
         // An abstract type definition
         case FPP.Keywords.type:
-          index = visitTypeDef(index);
+          this.visitTypeDef();
           break;
         // A parameter specifier
         case FPP.Keywords.param:
-          if (lookAhead(index) === FPP.Keywords.get || lookAhead(index) === FPP.Keywords.set) {
-            index = visitPortInstanceSpec(index);
+          if (this.lookAhead([FPP.Keywords.get], false) || this.lookAhead([FPP.Keywords.set], false)) {
+            this.visitPortInstanceSpec();
           } else {
-            index = visitParamSpec(index);
+            this.visitParamSpec();
           }
           break;
         // A command specifier
         case FPP.Keywords.async:
         case FPP.Keywords.guarded:
         case FPP.Keywords.sync:
-          if (lookAhead(index) === FPP.Keywords.input) {
-            index = visitPortInstanceSpec(index);
+          if (this.lookAhead([FPP.Keywords.input], false)) {
+            this.visitPortInstanceSpec();
           } else {
-            index = visitCommandSpec(index);
+            this.visitCommandSpec();
           }
           break;
         // A port instance specifier
         case FPP.Keywords.output:
-          index = visitPortInstanceSpec(index);
+          this.visitPortInstanceSpec();
           break;
         case FPP.Keywords.command:
         case FPP.Keywords.text:
         case FPP.Keywords.time:
-          index = visitPortInstanceSpec(index);
+          this.visitPortInstanceSpec();
           break;
         // A telemetry channel specifier
         case FPP.Keywords.telemetry:
-          if (lookAhead(index) === FPP.Keywords.port) {
-            index = visitPortInstanceSpec(index);
+          if (this.lookAhead([FPP.Keywords.port], false)) {
+            this.visitPortInstanceSpec();
           } else {
-            index = visitTelemetryChannelSpec(index);
+            this.visitTelemetryChannelSpec();
           }
           break;
         // An event specifier
         case FPP.Keywords.event:
-          if (lookAhead(index) === FPP.Keywords.port) {
-            index = visitPortInstanceSpec(index);
+          if (this.lookAhead([FPP.Keywords.port], false)) {
+            this.visitPortInstanceSpec();
           } else {
-            index = visitEventSpec(index);
+            this.visitEventSpec();
           }
           break;
         // An include specifier
         case FPP.Keywords.include:
-          index = visitIncludeSpec(index);
+          this.visitIncludeSpec();
           break;
         // An internal port specifier
         case FPP.Keywords.internal:
-          index = visitInternalPortSpec(index);
+          this.visitInternalPortSpec();
           break;
         // A port matching specifier
         case FPP.Keywords.match:
-          index = visitPortMatchingSpec(index);
+          this.visitPortMatchingSpec();
           break;
         default:
         // Error
       }
-      index = ignoreNonsemanticTokens(++index);
     }
-    currentScope.pop();
-    return index;
+    this.currentScope.pop();
   }
 
   // [ ref ] identifier : type-name
-  function visitParamList(index: number): number {
-    console.log("Visiting param-list\tCurrent Token:\t", tokens[index].text);
-    while (index < tokens.length && tokens[index].text !== FPP.Operators.RPAREN) {
-      index = visitToken(index, FPP.Keywords.ref, false);
-      index = visitIdentifierDef(++index, FPP.TokenType.PARAMETER, [FPP.TokenType.DECLARATION]);
-      index = visitToken(++index, FPP.Operators.COLON, true);
-      index = visitType(++index);
-      index = ignoreNonsemanticTokens(++index);
+  private visitParamList() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RPAREN])) {
+      console.log("(" + this.index + ")\t", "Inside param-list\tCurrent Token:\t", this.tokens[this.index].text);
+      this.visitToken(FPP.Keywords.ref, false);
+      this.visitIdentifierDef(FPP.TokenType.PARAMETER, [FPP.ModifierType.DECLARATION]);
+      this.visitToken(FPP.Operators.COLON, true);
+      this.visitType();
     }
-    return index;
   }
 
-  function visitTelemetrySequence(index: number): number {
-    if (tokens[index]?.text === FPP.Operators.LBRACE) {
-      console.log("Visiting Telemetry Sequence");
-      let validNext = true;
-      if (++index < tokens.length) {
-        do {
-          if (FPP.Operators.RBRACE === tokens[index]?.text) {
-            console.log("Leaving Telemetry Sequence");
-            return index;
-          } else if (!validNext && tokens[index - 1].line === tokens[index].line) {
-            console.log("Invalid Telemetry Sequence\tCurrent Token:", tokens[index]?.text);
-            return index;
-          }
-          telemetryLimit: {
-            if (
-              index ===
-              (index = visitToken(
-                index,
-                [FPP.Keywords.red, FPP.Keywords.yellow, FPP.Keywords.orange],
-                true
-              ))
-            ) {
-              if (index >= (index = visitExpression(++index))) {
-                break telemetryLimit;
-              }
-            }
-            console.log("Invalid telemetry limit.\tCurrent Token: ", tokens[index]?.text);
-          }
-          if (FPP.Operators.COMMA === tokens[index]?.text) {
-            index++;
-            validNext = true;
-          } else {
-            validNext = false;
-          }
-        } while (true);
-      }
+  private visitTelemetryLimitSequence() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      console.log("(" + this.index + ")\t", "Inside telemetry-limit-sequence\tCurrent Token:\t", this.tokens[this.index].text);
+      this.visitToken([FPP.Keywords.red, FPP.Keywords.yellow, FPP.Keywords.orange], true);
+      this.visitExpression;
+      this.visitToken(FPP.Operators.COMMA, false);
     }
-    return index;
   }
 
   // Init Specifier Sequence
-  // Used in component definition
-  function visitInitSpecSequence(index: number): number {
-    console.log("Visiting init-specifier-seq\tCurrent Token:\t", tokens[index].text);
-    while (index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
-      if (tokens[index].text === FPP.Keywords.phase) {
-        index = visitInitSpec(index);
+  // phase expression string-literal
+  private visitInitSpecSequence() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      console.log("(" + this.index + ")\t", "Inside init-specifier-seq\tCurrent Token:\t", this.tokens[this.index].text);
+      if (this.lookAhead([FPP.Keywords.phase])) {
+        this.visitInitSpec();
       } else {
-        index++;
+        this.nextIndex();
       }
     }
-    return index;
   }
 
-  function visitModuleMemberSequence(index: number): number {
-    console.log("Visiting module-member-seq\tCurrent Token:\t", tokens[index].text);
-    while (index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
-      switch (tokens[index].text) {
+  private visitModuleMemberSequence() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      this.nextIndex();
+      console.log("(" + this.index + ")\t", "Inside module-member-seq\tCurrent Token:\t", this.tokens[this.index].text);
+      switch (this.tokens[this.index].text) {
         case FPP.Keywords.active:
         case FPP.Keywords.passive:
         case FPP.Keywords.queued:
           // A component definition
-          index = visitComponentDef(index);
+          this.visitComponentDef();
           break;
         // A component instance definition
         case FPP.Keywords.instance:
-          index = visitComponentInstanceDef(index);
+          this.visitComponentInstanceDef();
           break;
         // A constant definition
         case FPP.Keywords.constant:
-          index = visitConstantDef(index);
+          this.visitConstantDef();
           break;
         // A module definition
         case FPP.Keywords.module:
-          index = visitModuleDef(index);
+          this.visitModuleDef();
           break;
         // A port definition
         case FPP.Keywords.port:
-          index = visitPortDef(index);
+          this.visitPortDef();
           break;
         // A struct definition
         case FPP.Keywords.struct:
-          index = visitStructDef(index);
+          this.visitStructDef();
           break;
         // A topology definition
         case FPP.Keywords.topology:
-          index = visitTopologyDef(index);
+          this.visitTopologyDef();
           break;
         // A location specifier
         case FPP.Keywords.locate:
-          index = visitLocationSpec(index);
+          this.visitLocationSpec();
           break;
         // An abstract type definition
         case FPP.Keywords.type:
-          index = visitType(index);
+          this.visitType();
           break;
         // An array definition
         case FPP.Keywords.array:
-          index = visitArrayDef(index);
+          this.visitArrayDef();
           break;
         // An enum definition
         case FPP.Keywords.enum:
-          index = visitEnumDef(index);
+          this.visitEnumDef();
           break;
         // An include specifier
         case FPP.Keywords.include:
-          index = visitIncludeSpec(index);
+          this.visitIncludeSpec();
           break;
         default:
         //Error
       }
-      index = ignoreNonsemanticTokens(++index);
     }
-    return index;
   }
 
-  function visitStructMemberSequence(index: number): number {
-    if (tokens[index]?.text === FPP.Operators.LBRACE) {
-      console.log("Visiting Struct Type Member Sequence");
-      let validNext = true;
-      if (++index < tokens.length) {
-        do {
-          if (FPP.Operators.RBRACE === tokens[index]?.text) {
-            console.log("Leaving Struct Member Sequence");
-            return index;
-          } else if (!validNext && tokens[index - 1].line === tokens[index].line) {
-            console.log("Invalid Struct Member Sequence\tCurrent Token:", tokens[index]?.text);
-            return index;
-          }
-          if (index >= (index = visitStructTypeMember(index)) || ++index >= tokens.length) {
-            break;
-          }
-          if (FPP.Operators.COMMA === tokens[index]?.text) {
-            index++;
-            validNext = true;
-          } else {
-            validNext = false;
-          }
-        } while (true);
-      }
-      console.log("Invalid exit of Struct Member Sequence\tCurrent Token:", tokens[index]?.text);
-    }
-    return index;
+  private visitStructMemberSequence() {
+    this.nextIndex();
+    console.log("(" + this.index + ")\t", "Inside struct-type-member-sequence\tCurrent Token:\t", this.tokens[this.index].text);
+    // if (this.tokens[this.index]?.text === FPP.Operators.LBRACE) {
+    //   let validNext = true;
+    //   if ( < this.tokens.length) {
+    //     do {
+    //       if (FPP.Operators.RBRACE === this.tokens[this.index]?.text) {
+    //         console.log("Leaving Struct Member Sequence");
+    //         return index;
+    //       } else if (!validNext && this.tokens[index - 1].line === this.tokens[this.index].line) {
+    //         console.log(
+    //           "Invalid Struct Member Sequence\tCurrent Token:",
+    //           this.tokens[this.index]?.text
+    //         );
+    //         return index;
+    //       }
+    //       if (index >= this.visitStructTypeMember(index) ||  >= this.tokens.length) {
+    //         break;
+    //       }
+    //       if (FPP.Operators.COMMA === this.tokens[this.index]?.text) {
+    //         index++;
+    //         validNext = true;
+    //       } else {
+    //         validNext = false;
+    //       }
+    //     } while (true);
+    //   }
+    //   console.log(
+    //     "Invalid exit of Struct Member Sequence\tCurrent Token:",
+    //     this.tokens[this.index]?.text
+    //   );
+    // }
   }
 
-  function visitTopologyMemberSequence(index: number): number {
-    console.log("Visiting Topology Member Sequence\tNext Token:\t", tokens[index + 1]?.text);
-
-    while (++index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
-      switch (tokens[index].text) {
-        // component instance specifier
+  private visitTopologyMemberSequence() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      this.nextIndex();
+      console.log("(" + this.index + ")\t", "Inside topology-member-sequence\tCurrent Token:\t", this.tokens[this.index]?.text);
+      switch (this.tokens[this.index].text) {
+        // A component instance specifier
         case FPP.Keywords.private:
-          if (tokens[++index].text === FPP.Keywords.instance) {
-            index = visitComponentInstanceSpec(index);
-          } else {
-            // Error. Expected keyword instance
-          }
         case FPP.Keywords.instance:
-          index = visitComponentInstanceSpec(index);
+          this.visitComponentInstanceSpec();
           break;
-        // connection graph specifier
+        // A connection graph specifier
         case FPP.Keywords.connections:
         case FPP.Keywords.command:
         case FPP.Keywords.event:
@@ -1137,50 +1016,46 @@ export module Visitor {
         case FPP.Keywords.param:
         case FPP.Keywords.telemetry:
         case FPP.Keywords.time:
-          index = visitConnectionGraphSpec(index);
+          this.visitConnectionGraphSpec();
           break;
-        // topology import specifier
+        // A topology import specifier
         case FPP.Keywords.import:
-          index = visitTopologyImportSpec(index);
+          this.visitTopologyImportSpec();
           break;
-        // include specifier
+        // An include specifier
         case FPP.Keywords.include:
-          index = visitIncludeSpec(index);
+          this.visitIncludeSpec();
           break;
         default:
-        // Error
+        //Error
       }
     }
-    return index;
   }
 
   // For direct graph specifiers
   // port-instance-id [ [ expression ] ] -> port-instance-id [ [ expression ] ]
-  function visitConnectionSequence(index: number): number {
-    console.log("Visiting Connection Sequence\tCurrent Token:\t", tokens[index].text);
-    while (++index < tokens.length && tokens[index].text !== FPP.Operators.RBRACE) {
-      index = visitQualifiedIdentifier(index);
-      if (lookAhead(index) === FPP.Operators.LBRACKET) {
-        index = ignoreNonsemanticTokens(++index);
-        index = visitExpression(++index);
-        index = visitToken(++index, FPP.Operators.RBRACKET, true);
+  private visitConnectionSequence() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      console.log("(" + this.index + ")\t", "Inside Connection Sequence\tCurrent Token:\t", this.tokens[this.index].text);
+      this.visitQualifiedIdentifier();
+      if (this.lookAhead([FPP.Operators.LBRACKET])) {
+        this.visitExpression();
+        this.visitToken(FPP.Operators.RBRACKET, true);
       }
-      index = visitToken(++index, FPP.Operators.RARROW, true);
-      index = visitQualifiedIdentifier(++index);
-      if (lookAhead(index) === FPP.Operators.LBRACKET) {
-        index = ignoreNonsemanticTokens(++index);
-        index = visitExpression(++index);
-        index = visitToken(++index, FPP.Operators.RBRACKET, true);
+      this.visitToken(FPP.Operators.RARROW, true);
+      this.visitQualifiedIdentifier();
+      if (this.lookAhead([FPP.Operators.LBRACKET])) {
+        this.visitExpression();
+        this.visitToken(FPP.Operators.RBRACKET, true);
       }
     }
-    return index;
   }
 
   // For pattern graph specifiers
-  function visitInstanceSequence(index: number): number {
-    console.log("Visiting Instance Sequence\tNext Token:\t", tokens[++index].text);
-    // TO DO
-    return index;
+  private visitInstanceSequence() {
+    this.nextIndex();
+    console.log("(" + this.index + ")\t", "Inside Instance Sequence\tCurrent Token:\t", this.tokens[this.index].text);
+    // TODO
   }
 
   //---------------------------------------------------------------------------\\
@@ -1189,33 +1064,33 @@ export module Visitor {
   //---------------------------------------------------------------------------\\
 
   // identifier : [ [ expression ] ] type-name [ format string-literal ]
-  function visitStructTypeMember(index: number): number {
-    console.log("Visiting Struct Type Member\tCurrent Token:\t", tokens[index]?.text);
-    if (Parser.isIdentifier(tokens[index].text)) {
-      console.log("New Identifier\t\t\tCurrent Token:\t", tokens[index].text);
-      tokens[index].tokenType = FPP.KeywordTokensMap.PARAM;
-      tokens[index].tokenModifiers = [FPP.TokenType.DECLARATION, FPP.TokenType.PARAMETER];
-    } else {
-      console.log("Invalid Identifier\t\tCurrent Token:\t", tokens[index].text);
-      // Error
-      let thisLine = tokens[index].line;
-      while (tokens[index++].line === thisLine) {}
-      return index;
-    }
-    index = visitToken(++index, FPP.Operators.COLON, true);
-    if (lookAhead(index) === FPP.Operators.LBRACKET) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitExpression(++index);
-      if (tokens[index + 1]?.text !== FPP.Operators.RBRACKET) {
-        console.log("Invalid closed expression");
-      }
-      index++;
-    }
-    index = visitType(++index);
-    if (lookAhead(index) === FPP.Keywords.format) {
-      index = ignoreNonsemanticTokens(++index);
-      index = visitString(++index);
-    }
-    return index;
+  private visitStructTypeMember() {
+    console.log("(" + this.index + ")\t", "Visiting Struct Type Member\tCurrent Token:\t", this.tokens[this.index]?.text);
+    //   if (Parser.isIdentifier(this.tokens[this.index].text)) {
+    //     console.log("New Identifier\t\t\tCurrent Token:\t", this.tokens[this.index].text);
+    //     this.tokens[this.index].tokenType = FPP.KeywordTokensMap.PARAM;
+    //     this.tokens[this.index].tokenModifiers = [FPP.ModifierType.DECLARATION, FPP.TokenType.PARAMETER];
+    //   } else {
+    //     console.log("Invalid Identifier\t\tCurrent Token:\t", this.tokens[this.index].text);
+    //     // Error
+    //     let thisLine = this.tokens[this.index].line;
+    //     while (this.tokens[index++].line === thisLine) {}
+    //     return index;
+    //   }
+    //   this.visitToken(FPP.Operators.COLON, true);
+    //   if (this.lookAhead([FPP.Operators.LBRACKET])) {
+
+    //     this.visitExpression();
+    //     if (this.tokens[index + 1]?.text !== FPP.Operators.RBRACKET) {
+    //       console.log("Invalid closed expression");
+    //     }
+    //     index++;
+    //   }
+    //   this.visitType();
+    //   if (this.lookAhead([FPP.Keywords.format])) {
+
+    //     this.visitString();
+    //   }
+    // }
   }
 }

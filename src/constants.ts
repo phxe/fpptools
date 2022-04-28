@@ -13,7 +13,7 @@ export const eof = new Error("End of File");
 // Semantic Token Types
 export type TokenType = typeof TokenType[keyof typeof TokenType];
 export const TokenType = {
-  // Token
+  // Custom Tokens
   NIL: "",
   ANNOTATION: "annotation",
   COMPONENT: "component",
@@ -21,40 +21,45 @@ export const TokenType = {
   PORT: "port",
   TOPOLOGY: "topology",
   SPECIFIER: "specifier",
-  NAMESPACE: "namespace",
-  CLASS: "class",
-  ENUM: "enum",
-  INTERFACE: "interface",
-  STRUCT: "struct",
-  TYPEPARAMETER: "typeParameter",
-  TYPE: "type",
-  PARAMETER: "parameter",
-  VARIABLE: "variable",
-  PROPERTY: "property",
-  ENUMMEMBER: "enumMember",
-  DECORATOR: "decorator",
-  EVENT: "event",
-  FUNCTION: "function",
-  METHOD: "method",
-  MACRO: "macro",
-  LABEL: "label",
-  COMMENT: "comment",
-  STRING: "string",
-  KEYWORD: "keyword",
-  NUMBER: "number",
-  REGEXP: "regexp",
-  OPERATOR: "operator",
-  // Modifier
-  DECLARATION: "declaration",
-  DEFINITION: "definition",
-  READONLY: "readonly",
-  STATIC: "static",
-  DEPRECATED: "deprecated",
-  ABSTRACT: "abstract",
-  ASYNC: "async",
-  MODIFICATION: "modification",
-  DOCUMENTATION: "documentation",
-  DEFAULTLIBRARY: "defaultLibrary",
+  // Standard VS Code Tokens
+  NAMESPACE: "namespace", // For identifiers that declare or reference a namespace, module, or package.
+  // CLASS: "class", // For identifiers that declare or reference a class type.
+  ENUM: "enum", // For identifiers that declare or reference an enumeration type.
+  // INTERFACE: "interface", // For identifiers that declare or reference an interface type.
+  STRUCT: "struct", // For identifiers that declare or reference a struct type.
+  // TYPEPARAMETER: "typeParameter", // For identifiers that declare or reference a type parameter.
+  TYPE: "type", // For identifiers that declare or reference a type that is not covered above.
+  PARAMETER: "parameter", // For identifiers that declare or reference a function or method parameters.
+  VARIABLE: "variable", // For identifiers that declare or reference a local or global variable.
+  // PROPERTY: "property", // For identifiers that declare or reference a member property, member field, or member variable.
+  ENUMMEMBER: "enumMember", // For identifiers that declare or reference an enumeration property, constant, or member.
+  // DECORATOR: "decorator", // For identifiers that declare or reference decorators and annotations.
+  // EVENT: "event", // For identifiers that declare an event property.
+  // FUNCTION: "function", // For identifiers that declare a function.
+  // METHOD: "method", // For identifiers that declare a member function or method.
+  // MACRO: "macro", // For identifiers that declare a macro.
+  // LABEL: "label", // For identifiers that declare a label.
+  COMMENT: "comment", // For tokens that represent a comment.
+  STRING: "string", // For tokens that represent a string literal.
+  KEYWORD: "keyword", // For tokens that represent a language keyword.
+  NUMBER: "number", // For tokens that represent a number literal.
+  // REGEXP: "regexp", // For tokens that represent a regular expression literal.
+  OPERATOR: "operator", // For tokens that represent an operator.
+} as const;
+
+export type ModifierType = typeof ModifierType[keyof typeof ModifierType];
+export const ModifierType = {
+  // Standard VS Code Modifiers
+  DECLARATION: "declaration", // For declarations of symbols.
+  // DEFINITION: "definition", // For definitions of symbols, for example, in header files.
+  // READONLY: "readonly", // For readonly variables and member fields (constants).
+  // STATIC: "static", // For class members (static members).
+  // DEPRECATED: "deprecated", // For symbols that should no longer be used.
+  ABSTRACT: "abstract", // For types and member functions that are abstract.
+  ASYNC: "async", // For functions that are marked async.
+  // MODIFICATION: "modification", // For variable references where the variable is assigned to.
+  // DOCUMENTATION: "documentation", // For occurrences of symbols in documentation.
+  // DEFAULTLIBRARY: "defaultLibrary", // For symbols that are part of the standard library.
 } as const;
 
 // FPP Types

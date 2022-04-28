@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Parser } from "./parser";
+import { ParsedToken } from "./token";
 
 var collection: vscode.DiagnosticCollection;
 
@@ -12,7 +12,7 @@ export module Diagnostics {
     }
 
     // convenience function that creates a diagnostic for a specific token
-    export function createFromToken(errString: string, token: Parser.ParsedToken, severity: vscode.DiagnosticSeverity) {
+    export function createFromToken(errString: string, token: ParsedToken, severity: vscode.DiagnosticSeverity) {
         var startPosition = new vscode.Position(token.line, token.startCharacter);
         var endPosition = new vscode.Position(token.line, token.startCharacter + token.length);
         create(errString, startPosition, endPosition, token.line, severity);

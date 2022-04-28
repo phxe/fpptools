@@ -77,10 +77,35 @@
   ],
   "preview": true,
   "activationEvents": [
-    "onLanguage:fpp"
+    "onLanguage:fpp",
+    "onCommand:fpp.toggleSemantic"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": [
+      {
+        "title": "FPPTools",
+        "properties": {
+          "fpp.semantic": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable/Disable Semantic Functionality"
+          }
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "fpp.toggleSemantic",
+        "title": "Enable/Disable Semantic Functionality",
+        "category": "FPP"
+      },
+      {
+        "command": "fpp.semantic",
+        "title": "Run Semantics",
+        "enablement": "false"
+      }
+    ],
     "languages": [
       {
         "id": "fpp",
