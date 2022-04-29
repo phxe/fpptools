@@ -2,7 +2,7 @@
   "name": "fpptools",
   "displayName": "FPPTools",
   "description": "F Prime Prime Language Support for Visual Studio Code",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "unlv-team5",
   "icon": "logo.png",
   "contributors": [
