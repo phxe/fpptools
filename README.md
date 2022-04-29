@@ -1,11 +1,12 @@
 # FPPTools
 
-Welcome to the Visual Studio Code extension for **F Prime Prime (FPP)**. This extension provides language support for FPP (\**.fpp* and \**.fppi*).
+Welcome to the Visual Studio Code extension for **F Prime Prime (FPP)**. This extension provides language support for FPP (\*_.fpp_ and \*_.fppi_).
 
 ---
 
 ### [F Prime Prime](https://github.com/fprime-community/fpp)
-> FPP is a modeling language for the F Prime flight software (FSW) framework. Developers may combine code generated from FPP with code written by hand to create, e.g., deployable FSW programs and ground data environments.
+
+> FPP is a modeling language for the F Prime flight software (FSW) framework developed by JPL. FPP can be used to generate XML and C++ using [FPP compiler tools](https://github.com/fprime-community/fpp/wiki/Tools). Developers may combine code generated from FPP with code written by hand to create, e.g., deployable FSW programs and ground data environments.
 
 ### [F Prime](https://nasa.github.io/fprime/)
 
@@ -17,7 +18,17 @@ Welcome to the Visual Studio Code extension for **F Prime Prime (FPP)**. This ex
 
 ### Syntax Highlighting
 
-Highlighting of FPP keywords, symbols, and identifiers is performed using VS Code's tokenization engine, TextMate.
+Syntactic highlighting of FPP tokens is performed using VS Code's tokenization engine, [TextMate grammars](https://macromates.com/manual/en/language_grammars). FPP tokens are grouped in the following patterns:
+
+- Keywords
+  - Control
+  - Type
+- Operators
+- Identifiers
+- Numbers
+- Strings
+- Comments
+- Annotations
 
 ---
 
