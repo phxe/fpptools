@@ -87,6 +87,46 @@ export function activate(context: vscode.ExtensionContext) {
     // );
   }
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand("fpp.toggleDiagnostics", () => {
+      if (vscode.workspace.getConfiguration().get("fpp.diagnostics", true)) {
+        vscode.window.showInformationMessage("FPPTools: Diagnostics Disabled");
+        vscode.workspace.getConfiguration().update("fpp.diagnostics", false, true);
+        // Figure out how to Disable the diagnostics feature here:
+        // context.subscriptions.push(
+        //   vscode.languages.registerDocumentSemanticTokensProvider(
+        //     { language: "fpp" },
+        //     tokenProvider,
+        //     new vscode.SemanticTokensLegend([], []) // Hacky
+        //   )
+        // );
+      } else {
+        vscode.window.showInformationMessage("FPPTools: Diagnostics Enabled");
+        vscode.workspace.getConfiguration().update("fpp.diagnostics", true, true);
+        // Figure out how to Enable the diagnostics feature here:
+        // context.subscriptions.push(
+        //   vscode.languages.registerDocumentSemanticTokensProvider(
+        //     { language: "fpp" },
+        //     // { scheme: "file", language: "fpp" },
+        //     tokenProvider,
+        //     SemanticTokens.tokenLegend
+        //   )
+        // );
+      }
+    })
+  );
+  
+  if (vscode.workspace.getConfiguration().get("fpp.diagnostics", true)) {
+    // context.subscriptions.push(
+    //   vscode.languages.registerDocumentSemanticTokensProvider(
+    //     { language: "fpp" },
+    //     // { scheme: "file", language: "fpp" },
+    //     tokenProvider,
+    //     SemanticTokens.tokenLegend
+    //   )
+    // );
+  }
+
   // context.subscriptions.push(
   //   vscode.languages.registerCompletionItemProvider(
   //     { scheme: "file", language: "fpp" },

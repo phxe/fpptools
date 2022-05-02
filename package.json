@@ -102,6 +102,16 @@
             "description": "Enable/Disable autocomplete Functionality"
           }
         }
+      },
+      {
+        "title": "FPPTools",
+        "properties": {
+          "fpp.diagnostics": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable/Disable Diagnostics Functionality"
+          }
+        }
       }
     ],
     "commands": [
@@ -123,6 +133,16 @@
       {
         "command": "fpp.autocomplete",
         "title": "Run Autocomplete",
+        "enablement": "false"
+      },
+      {
+        "command": "fpp.toggleDiagnostics",
+        "title": "Enable/Disable Diagnostics Functionality",
+        "category": "FPP"
+      },
+      {
+        "command": "fpp.diagnostics",
+        "title": "Run Diagnostics",
         "enablement": "false"
       }
     ],
