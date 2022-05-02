@@ -12,7 +12,7 @@
     },
     {
       "name": "Alexander Xiong",
-      "email": "xiong@unlv.nevada.edu"
+      "email": "xionga1@unlv.nevada.edu"
     },
     {
       "name": "Andy Wu",
@@ -92,6 +92,16 @@
             "description": "Enable/Disable Semantic Functionality"
           }
         }
+      },
+      {
+        "title": "FPPTools",
+        "properties": {
+          "fpp.autocomplete": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable/Disable autocomplete Functionality"
+          }
+        }
       }
     ],
     "commands": [
@@ -103,6 +113,16 @@
       {
         "command": "fpp.semantic",
         "title": "Run Semantics",
+        "enablement": "false"
+      },
+      {
+        "command": "fpp.toggleAutocomplete",
+        "title": "Enable/Disable Autocomplete Functionality",
+        "category": "FPP"
+      },
+      {
+        "command": "fpp.autocomplete",
+        "title": "Run Autocomplete",
         "enablement": "false"
       }
     ],

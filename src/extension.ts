@@ -47,6 +47,46 @@ export function activate(context: vscode.ExtensionContext) {
     );
   }
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand("fpp.toggleAutocomplete", () => {
+      if (vscode.workspace.getConfiguration().get("fpp.autocomplete", true)) {
+        vscode.window.showInformationMessage("FPPTools: Autocomplete Disabled");
+        vscode.workspace.getConfiguration().update("fpp.autocomplete", false, true);
+        // Figure out how to Disable the autocomplete feature here:
+        // context.subscriptions.push(
+        //   vscode.languages.registerDocumentSemanticTokensProvider(
+        //     { language: "fpp" },
+        //     tokenProvider,
+        //     new vscode.SemanticTokensLegend([], []) // Hacky
+        //   )
+        // );
+      } else {
+        vscode.window.showInformationMessage("FPPTools: Autocomplete Disabled");
+        vscode.workspace.getConfiguration().update("fpp.autocomplete", true, true);
+        // Figure out how to Enable the autocomplete feature here:
+        // context.subscriptions.push(
+        //   vscode.languages.registerDocumentSemanticTokensProvider(
+        //     { language: "fpp" },
+        //     // { scheme: "file", language: "fpp" },
+        //     tokenProvider,
+        //     SemanticTokens.tokenLegend
+        //   )
+        // );
+      }
+    })
+  );
+  
+  if (vscode.workspace.getConfiguration().get("fpp.autocomplete", true)) {
+    // context.subscriptions.push(
+    //   vscode.languages.registerDocumentSemanticTokensProvider(
+    //     { language: "fpp" },
+    //     // { scheme: "file", language: "fpp" },
+    //     tokenProvider,
+    //     SemanticTokens.tokenLegend
+    //   )
+    // );
+  }
+
   // context.subscriptions.push(
   //   vscode.languages.registerCompletionItemProvider(
   //     { scheme: "file", language: "fpp" },
