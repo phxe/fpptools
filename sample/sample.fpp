@@ -78,6 +78,9 @@ instance commandDispatcher: Svc.CommandDispatcher base id 0x100 \
   """
 }
 
+
+enum AD { AE = 0, AF = 1 }
+
 constant XXX = "A"
 
 constant XXX = """
@@ -94,11 +97,22 @@ enum FilterSeverity {
   DIAGNOSTIC = 5 @< Filter DIAGNOSTIC events
 }
 
-# struct PacketStat {
-#   BuffRecv: U32 @< Number of buffers received
-#   BuffErr: U32 @< Number of buffers received with errors
-#   PacketStatus: PacketRecvStatus @< Packet Status
-# }
+struct PacketStat {
+  BuffRecv: U32 @< Number of buffers received
+  BuffErr: U32 @< Number of buffers received with errors
+  PacketStatus: PacketRecvStatus @< Packet Status
+}
+
+struct SignalInfo {
+  $type: Ref.SignalType
+  history: Ref.SignalSet
+  pairHistory: Ref.SignalPairSet
+}
+
+struct SignalPair {
+  $time: F32 format "{f}"
+  value: F32 format "{f}"
+}
 
 
 # module RealModule {
@@ -119,6 +133,37 @@ enum FilterSeverity {
 #   constant h = E.b # Refers to M.E.b
 #   constant i = M.E.b # Refers to M.E.b
 # }
+
+module Drv {
+
+  port GpioWrite(
+                  state: bool
+                )
+
+  type ComBuffer
+
+  @ Port for passing communication packet buffers
+  port Com(
+            ref data: ComBuffer @< Buffer containing packet data
+            context: U32 @< Call context value; meaning chosen by user
+          )
+
+}
+
+module Drv {
+
+  port GpioRead(
+                 ref state: bool
+               )
+
+}
+
+
+command connections instance commandDispatcher {
+  Drv.GpioRead,
+  Drv.GpioWrite,
+}
+
 
 # Syntax Tests
 # 43423
