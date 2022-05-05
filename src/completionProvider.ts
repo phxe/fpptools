@@ -38,11 +38,9 @@ export class CompletionItems implements vscode.CompletionItemProvider {
         return list;
       }
       SemanticTokens.identifiers.forEach((t, str) => {
-        if (t[0] === "") {
-          let completionItem = new vscode.CompletionItem(str, vscode.CompletionItemKind.Variable);
-          completionItem.detail = t[1];
-          list.push(completionItem);
-        }
+        let completionItem = new vscode.CompletionItem(str, vscode.CompletionItemKind.Variable);
+        completionItem.detail = t[1];
+        list.push(completionItem);
       });
     }
     return list.concat(CompletionItems.keywordList);
