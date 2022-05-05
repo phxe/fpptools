@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
 export function isValue(str: string, e: any): boolean {
   return Object.values(e).includes(str as any as typeof e) ? true : false;
 }
@@ -142,6 +140,7 @@ export const KeywordTokensMap = {
   MODULE: TokenType.NAMESPACE,
   PORT: TokenType.PORT,
   STRUCT: TokenType.STRUCT,
+  STRUCTMEMBER: TokenType.VARIABLE,
   TYPE: TokenType.TYPE,
   TOPOLOGY: TokenType.TOPOLOGY,
   PARAM: TokenType.PARAMETER,

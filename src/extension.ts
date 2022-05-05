@@ -1,170 +1,60 @@
 import * as vscode from "vscode";
+import * as FPP from "./constants";
 import { SemanticTokens } from "./semanticTokens";
+import { CompletionItems } from "./completionProvider";
 import { Diagnostics } from "./diagnostics";
-import { Keywords, TokenType } from "./constants";
 
 vscode.window.showInformationMessage("FPPTools Extension Active");
 
 export function activate(context: vscode.ExtensionContext) {
-  Diagnostics.createCollection();
+  const fpp = vscode.languages;
+  const editor = vscode.workspace;
   const tokenProvider = new SemanticTokens();
-
+  const completionProvider = new CompletionItems();
+  let disposableCompletionProvider = fpp.registerCompletionItemProvider({ language: "fpp" }, completionProvider, FPP.Operators.DOT);
+  context.subscriptions.push(fpp.registerDocumentSemanticTokensProvider({ language: "fpp" }, tokenProvider, SemanticTokens.tokenLegend));
+  if (editor.getConfiguration().get("fpp.autocomplete", true)) {
+    context.subscriptions.push(disposableCompletionProvider);
+  }
+  // User Configuration Settings
   context.subscriptions.push(
     vscode.commands.registerCommand("fpp.toggleSemantic", () => {
-      if (vscode.workspace.getConfiguration().get("fpp.semantic", true)) {
+      if (editor.getConfiguration().get("fpp.semantic", true)) {
         vscode.window.showInformationMessage("FPPTools: Semantic Tokens Disabled");
-        vscode.workspace.getConfiguration().update("fpp.semantic", false, true);
-        context.subscriptions.push(
-          vscode.languages.registerDocumentSemanticTokensProvider(
-            { language: "fpp" },
-            tokenProvider,
-            new vscode.SemanticTokensLegend([], []) // Hacky
-          )
-        );
+        editor.getConfiguration().update("fpp.semantic", false, true);
       } else {
         vscode.window.showInformationMessage("FPPTools: Semantic Tokens Enabled");
-        vscode.workspace.getConfiguration().update("fpp.semantic", true, true);
-        context.subscriptions.push(
-          vscode.languages.registerDocumentSemanticTokensProvider(
-            { language: "fpp" },
-            // { scheme: "file", language: "fpp" },
-            tokenProvider,
-            SemanticTokens.tokenLegend
-          )
-        );
+        editor.getConfiguration().update("fpp.semantic", true, true);
       }
     })
   );
-
-  if (vscode.workspace.getConfiguration().get("fpp.semantic", true)) {
-    context.subscriptions.push(
-      vscode.languages.registerDocumentSemanticTokensProvider(
-        { language: "fpp" },
-        // { scheme: "file", language: "fpp" },
-        tokenProvider,
-        SemanticTokens.tokenLegend
-      )
-    );
-  }
-
   context.subscriptions.push(
     vscode.commands.registerCommand("fpp.toggleAutocomplete", () => {
       if (vscode.workspace.getConfiguration().get("fpp.autocomplete", true)) {
-        vscode.window.showInformationMessage("FPPTools: Autocomplete Disabled");
+        vscode.window.showInformationMessage("FPPTools: Code Completion Disabled");
         vscode.workspace.getConfiguration().update("fpp.autocomplete", false, true);
-        // Figure out how to Disable the autocomplete feature here:
-        // context.subscriptions.push(
-        //   vscode.languages.registerDocumentSemanticTokensProvider(
-        //     { language: "fpp" },
-        //     tokenProvider,
-        //     new vscode.SemanticTokensLegend([], []) // Hacky
-        //   )
-        // );
+        disposableCompletionProvider.dispose();
       } else {
-        vscode.window.showInformationMessage("FPPTools: Autocomplete Disabled");
+        vscode.window.showInformationMessage("FPPTools: Code Completion Enabled");
         vscode.workspace.getConfiguration().update("fpp.autocomplete", true, true);
-        // Figure out how to Enable the autocomplete feature here:
-        // context.subscriptions.push(
-        //   vscode.languages.registerDocumentSemanticTokensProvider(
-        //     { language: "fpp" },
-        //     // { scheme: "file", language: "fpp" },
-        //     tokenProvider,
-        //     SemanticTokens.tokenLegend
-        //   )
-        // );
+        disposableCompletionProvider = fpp.registerCompletionItemProvider({ language: "fpp" }, completionProvider, FPP.Operators.DOT);
+        context.subscriptions.push(disposableCompletionProvider);
       }
     })
   );
-  
-  if (vscode.workspace.getConfiguration().get("fpp.autocomplete", true)) {
-    // context.subscriptions.push(
-    //   vscode.languages.registerDocumentSemanticTokensProvider(
-    //     { language: "fpp" },
-    //     // { scheme: "file", language: "fpp" },
-    //     tokenProvider,
-    //     SemanticTokens.tokenLegend
-    //   )
-    // );
-  }
-
   context.subscriptions.push(
     vscode.commands.registerCommand("fpp.toggleDiagnostics", () => {
       if (vscode.workspace.getConfiguration().get("fpp.diagnostics", true)) {
-        vscode.window.showInformationMessage("FPPTools: Diagnostics Disabled");
+        vscode.window.showInformationMessage("FPPTools: Code Diagnostics Disabled");
         vscode.workspace.getConfiguration().update("fpp.diagnostics", false, true);
-        // Figure out how to Disable the diagnostics feature here:
-        // context.subscriptions.push(
-        //   vscode.languages.registerDocumentSemanticTokensProvider(
-        //     { language: "fpp" },
-        //     tokenProvider,
-        //     new vscode.SemanticTokensLegend([], []) // Hacky
-        //   )
-        // );
+        Diagnostics.collection.dispose();
       } else {
-        vscode.window.showInformationMessage("FPPTools: Diagnostics Enabled");
+        vscode.window.showInformationMessage("FPPTools: Code Diagnostics Enabled");
         vscode.workspace.getConfiguration().update("fpp.diagnostics", true, true);
-        // Figure out how to Enable the diagnostics feature here:
-        // context.subscriptions.push(
-        //   vscode.languages.registerDocumentSemanticTokensProvider(
-        //     { language: "fpp" },
-        //     // { scheme: "file", language: "fpp" },
-        //     tokenProvider,
-        //     SemanticTokens.tokenLegend
-        //   )
-        // );
+        Diagnostics.collection = vscode.languages.createDiagnosticCollection();
       }
     })
   );
-  
-  if (vscode.workspace.getConfiguration().get("fpp.diagnostics", true)) {
-    // context.subscriptions.push(
-    //   vscode.languages.registerDocumentSemanticTokensProvider(
-    //     { language: "fpp" },
-    //     // { scheme: "file", language: "fpp" },
-    //     tokenProvider,
-    //     SemanticTokens.tokenLegend
-    //   )
-    // );
-  }
-
-  // context.subscriptions.push(
-  //   vscode.languages.registerCompletionItemProvider(
-  //     { scheme: "file", language: "fpp" },
-  //     {
-  //       provideCompletionItems(
-  //         document: vscode.TextDocument,
-  //         position: vscode.Position,
-  //         token: vscode.CancellationToken,
-  //         context: vscode.CompletionContext
-  //       ) {
-  //         let list: vscode.CompletionItem[] = [];
-  //         let k: keyof typeof Keywords;
-  //         for (k in Keywords) {
-  //           list.push(new vscode.CompletionItem(Keywords[k]));
-  //         }
-  //         tokens.forEach((t) => {
-  //           switch (t.tokenType) {
-  //             case TokenType.COMPONENT:
-  //             case TokenType.ANNOTATION:
-  //             case TokenType.COMPONENT:
-  //             case TokenType.INSTANCE:
-  //             case TokenType.PORT:
-  //             case TokenType.TOPOLOGY:
-  //             case TokenType.SPECIFIER:
-  //             case TokenType.NAMESPACE:
-  //             case TokenType.ENUM:
-  //             case TokenType.ENUMMEMBER:
-  //               list.push(new vscode.CompletionItem(t.text));
-  //               break;
-  //             default:
-  //           }
-  //         });
-
-  //         return list;
-  //       },
-  //     }
-  //   )
-  // );
 }
 
 export function deactivate() {}

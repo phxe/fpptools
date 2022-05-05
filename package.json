@@ -88,8 +88,8 @@
         "properties": {
           "fpp.semantic": {
             "type": "boolean",
-            "default": true,
-            "description": "Enable/Disable Semantic Functionality"
+            "default": false,
+            "description": "Toggle Semantic Highlighting"
           }
         }
       },
@@ -99,7 +99,7 @@
           "fpp.autocomplete": {
             "type": "boolean",
             "default": true,
-            "description": "Enable/Disable autocomplete Functionality"
+            "description": "Toggle Code Completion"
           }
         }
       },
@@ -109,7 +109,7 @@
           "fpp.diagnostics": {
             "type": "boolean",
             "default": true,
-            "description": "Enable/Disable Diagnostics Functionality"
+            "description": "Toggle Code Diagnostics"
           }
         }
       }
@@ -117,33 +117,18 @@
     "commands": [
       {
         "command": "fpp.toggleSemantic",
-        "title": "Enable/Disable Semantic Functionality",
+        "title": "Toggle Semantic Highlighting",
         "category": "FPP"
-      },
-      {
-        "command": "fpp.semantic",
-        "title": "Run Semantics",
-        "enablement": "false"
       },
       {
         "command": "fpp.toggleAutocomplete",
-        "title": "Enable/Disable Autocomplete Functionality",
+        "title": "Toggle Code Completion",
         "category": "FPP"
-      },
-      {
-        "command": "fpp.autocomplete",
-        "title": "Run Autocomplete",
-        "enablement": "false"
       },
       {
         "command": "fpp.toggleDiagnostics",
-        "title": "Enable/Disable Diagnostics Functionality",
+        "title": "Toggle Code Diagnostics",
         "category": "FPP"
-      },
-      {
-        "command": "fpp.diagnostics",
-        "title": "Run Diagnostics",
-        "enablement": "false"
       }
     ],
     "languages": [

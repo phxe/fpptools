@@ -1,14 +1,14 @@
 import * as FPP from "./constants";
 import { DiagnosticSeverity } from "vscode";
 import { Diagnostics } from "./diagnostics";
-import { SemanticToken, ParsedToken } from "./token";
+import { ParsedToken } from "./token";
 import { Parser } from "./parser";
 
 export class Visitor {
-  semanticTokens: SemanticToken[] = [];
+  semanticTokens: ParsedToken[] = [];
   identifiers = new Map<string, [string, FPP.TokenType, FPP.ModifierType[]]>();
-  tokens: ParsedToken[] = []; // TODO: Make private when finished
-  private currentScope: [string, FPP.TokenType][] = [["", FPP.TokenType.NIL]];
+  tokens: ParsedToken[] = [];
+  private currentScope: [string, FPP.TokenType][] = [["_GLOBAL_", FPP.TokenType.NIL]];
   private index: number = 0;
 
   constructor(parsed: ParsedToken[]) {
@@ -16,6 +16,7 @@ export class Visitor {
   }
 
   visitDocument() {
+    this.identifiers.clear();
     while (this.index < this.tokens.length) {
       // prettier-ignore
       switch (this.tokens[this.index].text) {
@@ -33,13 +34,66 @@ export class Visitor {
         case FPP.Keywords.type:     this.visitTypeDef(); break;
         case FPP.Keywords.topology: this.visitTopologyDef(); break;
         // Specifiers
+        case FPP.Keywords.async:
+        case FPP.Keywords.guarded:
+        case FPP.Keywords.sync:
+          if (this.lookAhead([FPP.Keywords.input], false)) {
+            this.visitPortInstanceSpec();
+          } else {
+            this.visitCommandSpec();
+          }
+          break;
+        case FPP.Keywords.private:
+        case FPP.Keywords.instance: this.visitComponentInstanceSpec(); break;
+        case FPP.Keywords.connections:
+        case FPP.Keywords.health:   this.visitConnectionGraphSpec(); break;
+        case FPP.Keywords.include:  this.visitIncludeSpec(); break;
+        case FPP.Keywords.phase:    this.visitInitSpec(); break;
+        case FPP.Keywords.internal: this.visitInternalPortSpec(); break;
         case FPP.Keywords.locate:   this.visitLocationSpec(); break;
-        case FPP.Keywords.event:    this.visitEventSpec(); break;
+        case FPP.Keywords.text:
+        case FPP.Keywords.output:   this.visitPortInstanceSpec(); break;
+        case FPP.Keywords.match:    this.visitPortMatchingSpec(); break;
+        case FPP.Keywords.import:   this.visitTopologyImportSpec(); break;
+        case FPP.Keywords.event:
+          if (this.lookAhead([FPP.Keywords.port], false)) {
+            this.visitPortInstanceSpec();
+          } else {
+            this.visitEventSpec();
+          }
+          break;
+        case FPP.Keywords.param:
+          if (this.lookAhead([FPP.Keywords.get], false) || this.lookAhead([FPP.Keywords.set], false)) {
+            this.visitPortInstanceSpec();
+          } else {
+            this.visitParamSpec();
+          }
+          break;
+        case FPP.Keywords.command:
+          if (this.lookAhead([FPP.Keywords.recv,FPP.Keywords.reg, FPP.Keywords.resp ], false)) {
+            this.visitPortInstanceSpec();
+          } else {
+            this.visitConnectionGraphSpec();
+          }
+          break;
+        case FPP.Keywords.time:
+          if (this.lookAhead([FPP.Keywords.get], false)) {
+            this.visitPortInstanceSpec();
+          } else {
+            this.visitConnectionGraphSpec();
+          }
+          break;
+        case FPP.Keywords.telemetry:
+          if (this.lookAhead([FPP.Keywords.port], false)) {
+            this.visitPortInstanceSpec();
+          } else {
+            this.visitTelemetryChannelSpec();
+          }
+          break;
         case FPP.Operators.BSLASH: break;
         default:
           switch (this.tokens[this.index].tokenType) {
             case FPP.TokenType.STRING:
-            // case FPP.TokenType.COMMENT:
             case FPP.TokenType.ANNOTATION:
               break;
             default:
@@ -60,7 +114,7 @@ export class Visitor {
       }
       this.nextIndex();
     }
-    this.identifiers.clear();
+    // Revisit symbols
   }
 
   private nextLineIndex() {
@@ -76,15 +130,12 @@ export class Visitor {
   private ignoreNonsemanticTokens() {
     while (
       this.index < this.tokens.length &&
-      (this.tokens[this.index].tokenType === FPP.TokenType.ANNOTATION ||
-        // this.tokens[this.index].tokenType === FPP.TokenType.COMMENT ||
-        this.tokens[this.index].text === FPP.Operators.BSLASH)
+      (this.tokens[this.index].tokenType === FPP.TokenType.ANNOTATION || this.tokens[this.index].text === FPP.Operators.BSLASH)
     ) {
       console.log("(" + this.index + ")\t", "Skipping Nonsemantic Token\tCurrent Token:\t", this.tokens[this.index].text);
       this.index++;
     }
     if (this.index >= this.tokens.length) {
-      this.identifiers.clear();
       if (this.currentScope.length === 0) {
         this.currentScope.push(["", FPP.TokenType.NIL]);
       }
@@ -96,13 +147,10 @@ export class Visitor {
     let tmpIndex = this.index + 1;
     while (
       tmpIndex < this.tokens.length &&
-      (this.tokens[tmpIndex].tokenType === FPP.TokenType.ANNOTATION ||
-        // this.tokens[tmpIndex].tokenType === FPP.TokenType.COMMENT ||
-        this.tokens[tmpIndex].text === FPP.Operators.BSLASH)
+      (this.tokens[tmpIndex].tokenType === FPP.TokenType.ANNOTATION || this.tokens[tmpIndex].text === FPP.Operators.BSLASH)
     ) {
       tmpIndex++;
     }
-    console.log("(" + this.index + ")\t", "Lookahead Token(s):\t", str, "\tFound Token:\t", this.tokens[tmpIndex]?.text);
     if (str.includes(this.tokens[tmpIndex]?.text)) {
       if (jump) {
         this.index = tmpIndex;
@@ -130,8 +178,8 @@ export class Visitor {
           if (expectedToken.includes(this.tokens[i].text)) {
             // Error
             Diagnostics.createFromToken(
-              "Expected: " + expectedToken + "\nFound: " + this.tokens[i].text,
-              this.tokens[i],
+              "Expected: " + expectedToken + "\nFound: " + this.tokens[this.index].text,
+              this.tokens[this.index],
               DiagnosticSeverity.Error
             );
             console.log("(" + this.index + ")\t", "Located Token:\t\t" + this.tokens[i].text + "\tJumping Index To", i);
@@ -160,18 +208,12 @@ export class Visitor {
       if (this.tokens[this.index].text === FPP.Keywords.string && this.lookAhead([FPP.Keywords.size])) {
         this.visitExpression();
       }
-    } else if (this.identifiers.has(this.tokens[this.index].text)) {
+    } else if (Parser.isIdentifier(this.tokens[this.index].text)) {
       this.index--;
       this.visitQualifiedIdentifier();
     } else {
       // Error
-      // Temporarily allow if valid identifer until identifier reimplementation
-      if (Parser.isIdentifier(this.tokens[this.index].text)) {
-        this.index--;
-        this.visitQualifiedIdentifier();
-      } else {
-        Diagnostics.createFromToken("Invalid type: " + this.tokens[this.index].text, this.tokens[this.index], DiagnosticSeverity.Error);
-      }
+      Diagnostics.createFromToken("Invalid type: " + this.tokens[this.index].text, this.tokens[this.index], DiagnosticSeverity.Error);
     }
   }
 
@@ -272,9 +314,14 @@ export class Visitor {
         length: this.tokens[this.index].length,
         tokenType: this.identifiers.get(this.tokens[this.index].text)?.[1] as FPP.TokenType,
         tokenModifiers: this.identifiers.get(this.tokens[this.index].text)?.[2] as FPP.ModifierType[],
+        text: this.tokens[this.index].text,
       });
-      // this.tokens[this.index].tokenType = this.identifiers.get(this.tokens[this.index].text)?.[1] as FPP.TokenType;
-      // this.tokens[this.index].tokenModifiers = this.identifiers.get(this.tokens[this.index].text)?.[2] as FPP.TokenType[];
+      // Remove later
+      this.tokens[this.index].tokenType = this.identifiers.get(this.tokens[this.index].text)?.[1] as FPP.TokenType;
+      this.tokens[this.index].tokenModifiers = this.identifiers.get(this.tokens[this.index].text)?.[2] as FPP.ModifierType[];
+    } else if (!Parser.isIdentifier(this.tokens[this.index].text)) {
+      console.log("(" + this.index + ")\t", "Invalid Identifier\t\tCurrent Token:\t", this.tokens[this.index].text);
+      Diagnostics.createFromToken("Invalid Identifier: " + this.tokens[this.index].text, this.tokens[this.index], DiagnosticSeverity.Error);
     } else {
       // Error
       console.log("(" + this.index + ")\t", "Unknown Identifier\t\tCurrent Token:\t", this.tokens[this.index].text);
@@ -286,7 +333,10 @@ export class Visitor {
   private visitIdentifierDef(type: FPP.TokenType, modifiers: FPP.ModifierType[]) {
     this.nextIndex();
     if (Parser.isIdentifier(this.tokens[this.index].text)) {
-      if (this.identifiers.has(this.tokens[this.index].text)) {
+      if (
+        this.identifiers.has(this.tokens[this.index].text) &&
+        this.identifiers.get(this.tokens[this.index].text)?.[0] === this.currentScope[this.currentScope.length - 1][0]
+      ) {
         // Error
         console.log("(" + this.index + ")\t", "Duplicate Identifier\t\tCurrent Token:\t", this.tokens[this.index].text);
         // Diagnostics.createFromToken(
@@ -303,9 +353,13 @@ export class Visitor {
           delete modifiers[i];
           this.identifiers.set(this.tokens[this.index].text, [this.currentScope[this.currentScope.length - 1][0], type, modifiers.slice()]);
           switch (this.tokens[this.index].tokenType) {
+            // case FPP.TokenType.SPECIFIER:
             case FPP.TokenType.ENUM:
             case FPP.TokenType.COMPONENT:
             case FPP.TokenType.NAMESPACE:
+            case FPP.TokenType.INSTANCE:
+            case FPP.TokenType.STRUCT:
+            case FPP.TokenType.TOPOLOGY:
               console.log("(" + this.index + ")\t", "New Scope\t\t\tCurrent Token:\t", this.tokens[this.index].text);
               this.currentScope.push([this.tokens[this.index].text, this.tokens[this.index].tokenType]);
             default:
@@ -315,13 +369,7 @@ export class Visitor {
           this.identifiers.set(this.tokens[this.index].text, [this.currentScope[this.currentScope.length - 1][0], type, modifiers.slice()]);
         }
 
-        this.semanticTokens.push({
-          line: this.tokens[this.index].line,
-          startCharacter: this.tokens[this.index].startCharacter,
-          length: this.tokens[this.index].length,
-          tokenType: this.tokens[this.index].tokenType,
-          tokenModifiers: this.tokens[this.index].tokenModifiers,
-        });
+        this.semanticTokens.push(this.tokens[this.index]);
       }
     } else {
       // Error
@@ -476,9 +524,26 @@ export class Visitor {
     console.log("(" + this.index + ")\t", "Visiting Struct Definition\tCurrent Token:\t", this.tokens[this.index]?.text);
     this.visitIdentifierDef(FPP.KeywordTokensMap.STRUCT, [FPP.ModifierType.DECLARATION]);
     this.visitToken(FPP.Operators.LBRACE, true);
-    this.visitStructMemberSequence();
+    this.visitStructTypeMemberSequence();
     if (this.lookAhead([FPP.Keywords.default])) {
       this.visitExpression();
+    }
+  }
+
+  // Struct Member Definitions
+  // Syntax:
+  // identifier : [ [ expression ] ] type-name [ format string-literal ]
+  private visitStructTypeMemberDef() {
+    console.log("(" + this.index + ")\t", "Visiting Struct Type Member\tCurrent Token:\t", this.tokens[this.index]?.text);
+    this.index--;
+    this.visitIdentifierDef(FPP.KeywordTokensMap.STRUCTMEMBER, [FPP.ModifierType.DECLARATION]);
+    this.visitToken(FPP.Operators.COLON, true);
+    if (this.lookAhead([FPP.Operators.LBRACKET])) {
+      this.visitExpression();
+    }
+    this.visitType();
+    if (this.lookAhead([FPP.Keywords.format])) {
+      this.visitString();
     }
   }
 
@@ -528,7 +593,9 @@ export class Visitor {
   // Note: qual-ident must refer to a component instance
   private visitComponentInstanceSpec() {
     console.log("(" + this.index + ")\t", "Visiting Component Instance Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
-    // TODO
+    if (this.tokens[this.index].text !== FPP.Keywords.instance) {
+      this.visitToken(FPP.Keywords.instance, true);
+    }
     this.visitQualifiedIdentifier();
   }
 
@@ -713,10 +780,9 @@ export class Visitor {
 
   // Port Matching Specifiers
   // Syntax:
-  // [ private ] instance qual-ident
+  // match identifier with identifier
   private visitPortMatchingSpec() {
     console.log("(" + this.index + ")\t", "Visiting Port Matching Specifier\tCurrent Token:\t", this.tokens[this.index]?.text);
-    // TODO: Check private
     this.visitIdentifier();
     this.visitToken(FPP.Keywords.with, true);
     this.visitIdentifier();
@@ -769,7 +835,7 @@ export class Visitor {
   //---------------------------------------------------------------------------\\
 
   // Enum Constant Sequence
-  // Used in enum definition
+  // For enum definitions
   private visitEnumConstantSequence() {
     while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
       this.nextIndex();
@@ -781,7 +847,7 @@ export class Visitor {
   }
 
   // Component Member Sequence
-  // Used in component definition
+  // For component definitions
   private visitComponentMemberSequence() {
     while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
       this.nextIndex();
@@ -869,6 +935,9 @@ export class Visitor {
     this.currentScope.pop();
   }
 
+  // Parameter List (Sequence)
+  // For port definitions, command specifiers, event specifiers and internal port specifiers
+  // Syntax:
   // [ ref ] identifier : type-name
   private visitParamList() {
     while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RPAREN])) {
@@ -880,6 +949,8 @@ export class Visitor {
     }
   }
 
+  // Telemetry Limit Sequence
+  // For telemetry channel definitions
   private visitTelemetryLimitSequence() {
     while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
       console.log("(" + this.index + ")\t", "Inside telemetry-limit-sequence\tCurrent Token:\t", this.tokens[this.index].text);
@@ -890,7 +961,7 @@ export class Visitor {
   }
 
   // Init Specifier Sequence
-  // phase expression string-literal
+  // For component instance definitions
   private visitInitSpecSequence() {
     while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
       console.log("(" + this.index + ")\t", "Inside init-specifier-seq\tCurrent Token:\t", this.tokens[this.index].text);
@@ -902,15 +973,17 @@ export class Visitor {
     }
   }
 
+  // Module Member Sequence
+  // For module definitions
   private visitModuleMemberSequence() {
     while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
       this.nextIndex();
       console.log("(" + this.index + ")\t", "Inside module-member-seq\tCurrent Token:\t", this.tokens[this.index].text);
       switch (this.tokens[this.index].text) {
+        // A component definition
         case FPP.Keywords.active:
         case FPP.Keywords.passive:
         case FPP.Keywords.queued:
-          // A component definition
           this.visitComponentDef();
           break;
         // A component instance definition
@@ -943,7 +1016,7 @@ export class Visitor {
           break;
         // An abstract type definition
         case FPP.Keywords.type:
-          this.visitType();
+          this.visitTypeDef();
           break;
         // An array definition
         case FPP.Keywords.array:
@@ -963,41 +1036,20 @@ export class Visitor {
     }
   }
 
-  private visitStructMemberSequence() {
-    this.nextIndex();
-    console.log("(" + this.index + ")\t", "Inside struct-type-member-sequence\tCurrent Token:\t", this.tokens[this.index].text);
-    // if (this.tokens[this.index]?.text === FPP.Operators.LBRACE) {
-    //   let validNext = true;
-    //   if ( < this.tokens.length) {
-    //     do {
-    //       if (FPP.Operators.RBRACE === this.tokens[this.index]?.text) {
-    //         console.log("Leaving Struct Member Sequence");
-    //         return index;
-    //       } else if (!validNext && this.tokens[index - 1].line === this.tokens[this.index].line) {
-    //         console.log(
-    //           "Invalid Struct Member Sequence\tCurrent Token:",
-    //           this.tokens[this.index]?.text
-    //         );
-    //         return index;
-    //       }
-    //       if (index >= this.visitStructTypeMember(index) ||  >= this.tokens.length) {
-    //         break;
-    //       }
-    //       if (FPP.Operators.COMMA === this.tokens[this.index]?.text) {
-    //         index++;
-    //         validNext = true;
-    //       } else {
-    //         validNext = false;
-    //       }
-    //     } while (true);
-    //   }
-    //   console.log(
-    //     "Invalid exit of Struct Member Sequence\tCurrent Token:",
-    //     this.tokens[this.index]?.text
-    //   );
-    // }
+  // Struct Type Member Sequence
+  // For struct definitions
+  private visitStructTypeMemberSequence() {
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      this.nextIndex();
+      console.log("(" + this.index + ")\t", "Inside struct-type-member-sequence\tCurrent Token:\t", this.tokens[this.index].text);
+      this.visitStructTypeMemberDef();
+      this.visitToken(FPP.Operators.COMMA, false);
+    }
+    this.currentScope.pop();
   }
 
+  // Topology Member Sequence
+  // For topology definitions
   private visitTopologyMemberSequence() {
     while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
       this.nextIndex();
@@ -1030,9 +1082,12 @@ export class Visitor {
         //Error
       }
     }
+    this.currentScope.pop();
   }
 
+  // Connection Sequence
   // For direct graph specifiers
+  // Syntax:
   // port-instance-id [ [ expression ] ] -> port-instance-id [ [ expression ] ]
   private visitConnectionSequence() {
     while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
@@ -1048,49 +1103,19 @@ export class Visitor {
         this.visitExpression();
         this.visitToken(FPP.Operators.RBRACKET, true);
       }
+      this.visitToken(FPP.Operators.COMMA, false);
     }
   }
 
+  // Instance Sequence
   // For pattern graph specifiers
+  // Syntax:
+  // qual-ident
   private visitInstanceSequence() {
-    this.nextIndex();
-    console.log("(" + this.index + ")\t", "Inside Instance Sequence\tCurrent Token:\t", this.tokens[this.index].text);
-    // TODO
-  }
-
-  //---------------------------------------------------------------------------\\
-  //------------------------------\\ V I S I T //------------------------------\\
-  //----------------------------\\ S P E C I A L //----------------------------\\
-  //---------------------------------------------------------------------------\\
-
-  // identifier : [ [ expression ] ] type-name [ format string-literal ]
-  private visitStructTypeMember() {
-    console.log("(" + this.index + ")\t", "Visiting Struct Type Member\tCurrent Token:\t", this.tokens[this.index]?.text);
-    //   if (Parser.isIdentifier(this.tokens[this.index].text)) {
-    //     console.log("New Identifier\t\t\tCurrent Token:\t", this.tokens[this.index].text);
-    //     this.tokens[this.index].tokenType = FPP.KeywordTokensMap.PARAM;
-    //     this.tokens[this.index].tokenModifiers = [FPP.ModifierType.DECLARATION, FPP.TokenType.PARAMETER];
-    //   } else {
-    //     console.log("Invalid Identifier\t\tCurrent Token:\t", this.tokens[this.index].text);
-    //     // Error
-    //     let thisLine = this.tokens[this.index].line;
-    //     while (this.tokens[index++].line === thisLine) {}
-    //     return index;
-    //   }
-    //   this.visitToken(FPP.Operators.COLON, true);
-    //   if (this.lookAhead([FPP.Operators.LBRACKET])) {
-
-    //     this.visitExpression();
-    //     if (this.tokens[index + 1]?.text !== FPP.Operators.RBRACKET) {
-    //       console.log("Invalid closed expression");
-    //     }
-    //     index++;
-    //   }
-    //   this.visitType();
-    //   if (this.lookAhead([FPP.Keywords.format])) {
-
-    //     this.visitString();
-    //   }
-    // }
+    while (this.index < this.tokens.length && !this.lookAhead([FPP.Operators.RBRACE])) {
+      console.log("(" + this.index + ")\t", "Inside Instance Sequence\tCurrent Token:\t", this.tokens[this.index].text);
+      this.visitQualifiedIdentifier();
+      this.visitToken(FPP.Operators.COMMA, false);
+    }
   }
 }

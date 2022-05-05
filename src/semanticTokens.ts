@@ -8,11 +8,11 @@ export class SemanticTokens implements vscode.DocumentSemanticTokensProvider {
   static tokenTypeMap: Map<string, number>;
   static tokenModifierMap: Map<string, number>;
   static tokenLegend: vscode.SemanticTokensLegend;
+  static identifiers: Map<string, [string, FPP.TokenType, FPP.ModifierType[]]>;
 
   constructor() {
     SemanticTokens.tokenTypeMap = new Map<string, number>();
     SemanticTokens.tokenModifierMap = new Map<string, number>();
-
     const tokenTypesLegend: string[] = [];
     let k: keyof typeof FPP.TokenType;
     let i: number = 0;
@@ -20,47 +20,40 @@ export class SemanticTokens implements vscode.DocumentSemanticTokensProvider {
       tokenTypesLegend.push(FPP.TokenType[k]);
       SemanticTokens.tokenTypeMap.set(FPP.TokenType[k], i++);
     }
-
-    i = 0;
     const tokenModifiersLegend: string[] = [];
     let j: keyof typeof FPP.ModifierType;
+    i = 0;
     for (j in FPP.ModifierType) {
       tokenModifiersLegend.push(FPP.ModifierType[j]);
       SemanticTokens.tokenModifierMap.set(FPP.ModifierType[j], i++);
     }
-
     SemanticTokens.tokenLegend = new vscode.SemanticTokensLegend(tokenTypesLegend, tokenModifiersLegend);
   }
 
-  provideDocumentSemanticTokens(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.SemanticTokens {
-    // Dont visit if already opened and unchanged
+  provideDocumentSemanticTokens(document: vscode.TextDocument, cancelToken: vscode.CancellationToken): vscode.SemanticTokens {
     Diagnostics.clear(document);
     const visitor: Visitor = new Visitor(Scanner.scanDocument(document.getText()));
     try {
       visitor.visitDocument();
-    } catch {
-      console.log("Exception: " + FPP.eof.message);
+    } catch (e) {
+      console.log("Exception: " + e);
     }
     const builder = new vscode.SemanticTokensBuilder();
-    // visitor.tokens.forEach((token) => {
-    //   builder.push(
-    //     token.line,
-    //     token.startCharacter,
-    //     token.length,
-    //     this.encodeTokenType(token.tokenType),
-    //     this.encodeTokenModifiers(token.tokenModifiers)
-    //   );
-    // });
-    visitor.semanticTokens.forEach((token) => {
-      builder.push(
-        token.line,
-        token.startCharacter,
-        token.length,
-        SemanticTokens.encodeTokenType(token.tokenType),
-        SemanticTokens.encodeTokenModifiers(token.tokenModifiers)
-      );
-    });
-    return builder.build();
+    if (vscode.workspace.getConfiguration().get("fpp.semantic", false)) {
+      visitor.semanticTokens.forEach((token) => {
+        builder.push(
+          token.line,
+          token.startCharacter,
+          token.length,
+          SemanticTokens.encodeTokenType(token.tokenType),
+          SemanticTokens.encodeTokenModifiers(token.tokenModifiers)
+        );
+      });
+      SemanticTokens.identifiers = visitor.identifiers;
+      return builder.build();
+    } else {
+      return undefined!;
+    }
   }
 
   private static encodeTokenType(tokenType: string): number {
